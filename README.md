@@ -36,7 +36,7 @@ across the bottom of the screen peg to your max concurrency and you should see t
 cloud with reasonable stac2 concurrency seeing ~1,000 CC API calls per second (the yellow counter) should be easily in reach. You should see a screen similar to this:
 
 <p/>
-![Stac2 in Action](images/stac2_home.png)
+![Stac2 in Action](https://github.com/cloudfoundry/stac2/blob/master/images/stac2_home.png)
 <p/>
 
 If you see no activty, then click on the reset button above the load light grid and try again.
