@@ -35,14 +35,9 @@ that the cloud selector correctly selected your cloud, and then click the light 
 across the bottom of the screen peg to your max concurrency and you should see the counters in the main screen for the info call show activity. For a reasonable
 cloud with reasonable stac2 concurrency seeing ~1,000 CC API calls per second (the yellow counter) should be easily in reach. You should see a screen similar to this:
 
-<!--
-\begin{figure}[htbp]
-\centering
-\includegraphics[keepaspectratio,width=\textwidth,height=0.75\textheight]{images/stac2_home.png}
-\caption{Stac2 in Action}
-\label{}
-\end{figure}
--->
+<p/>
+![Stac2 in Action](images/stac2_home.png)
+<p/>
 
 If you see no activty, then click on the reset button above the load light grid and try again.
 * open up the stac2 app in your browser, click on the edit under the 100% marker, click "reset workloads", then "main"
