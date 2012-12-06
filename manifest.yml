@@ -1,0 +1,53 @@
+---
+applications:
+  ./nabh:
+    name: nabh
+    url: ${name}.${target-base}
+    memory: 128M
+    instances: 16
+    runtime: node06
+    framework: node
+    services:
+      stac2-redis:
+        tier: free
+        vendor: redis
+        version: "2.2"
+  ./nabv:
+    name: nabv
+    url: ${name}.${target-base}
+    memory: 128M
+    instances: 16
+    runtime: ruby18
+    framework: sinatra
+    services:
+      stac2-redis:
+        tier: free
+        vendor: redis
+        version: "2.2"
+      stac2-mongo:
+        tier: free
+        vendor: mongodb
+        version: "2.0"
+  ./stac2:
+    name: stac2
+    url: ${name}.${target-base}
+    memory: 128M
+    instances: 1
+    runtime: ruby18
+    framework: sinatra
+    services:
+      stac2-redis:
+        tier: free
+        vendor: redis
+        version: "2.2"
+      stac2-mongo:
+        tier: free
+        vendor: mongodb
+        version: "2.0"
+  ./nf:
+    name: nf
+    url: ${name}.${target-base}
+    memory: 64M
+    instances: 16
+    runtime: node06
+    framework: node
