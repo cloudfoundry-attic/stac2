@@ -11,10 +11,7 @@ Installing/running Stac2 on your Cloud Foundry instance requires a small amount 
 * create a cloud config file for your cloud into nabv/config/clouds
 * create user accounts used by stac2 using "vmc register"
 * note, you must use vmc version 0.4.2 or higher.
-* the idea is to use a single vmc push to create the app and services, BUT 0.4.2 has a bug in service creation so execute the following two vmc service creation commands first. once the service creation issue is fixed, you will not have to do these two manual steps.
-    * vmc create-service redis --version 2.2 --name stac2-redis
-    * vmc create-service mongodb --version 2.0 --name stac2-mongo
-* from the stac2 repo root, where the manifest.yml file is run vmc pus
+* from the stac2 repo root, where the manifest.yml file is run vmc push (note, you must have vmc 4.2 or higher, cfoundry 0.4.6 or higher, and manifests-vmc-plugin 0.4.17 or higher for the push to succeed)
 * based on the size of your cloud and desired concurrency you will need to adjust the instance counts of nabv, nabh, and nf
     * nabv should be sized to closely match the concurrency setting in your cloud config. It should be a little over half your desired concurrecny.
     for a large production cloud with a cmax of 192 set the instance count of nabv to ~100 (vmc scale nabv --instances 100)
@@ -39,11 +36,42 @@ cloud with reasonable stac2 concurrency seeing ~1,000 CC API calls per second (t
 ![Stac2 in Action](https://github.com/cloudfoundry/stac2/raw/master/images/stac2_home.png)
 <p/>
 
-If you see no activty, then click on the reset button above the load light grid and try again.
-* open up the stac2 app in your browser, click on the edit under the 100% marker, click "reset workloads", then "main"
-* select the "sys_sniff" workload, then run at 100%
+If you see no activty, then click on the reset button above the load light grid and try again. Worst case, restart nabh, then nabv,
+hit the reset button, and then restart.
 
+# Stac2 Display and Controls
 
+Stac2 has several output only regions and only a small set of input controls.
+
+* **timeclock** - this is a counter in the upper right that starts counting up once a scenario is started, and stos when the reset button is pressed
+* **on/off controls** - in the upper left of the screen there are 6 gray'd out buttons. The first is an on/off light. When this is red, it means a scenario is running and the scenario can be
+drained by clicking the red light. Next there are 5 load buttons labeled low, 25%, 50%, 75%, 100%. These determine the relative load thats going to be launched at the cloud.
+Start a load by clicing one of these buttons and increase/decrease by clicking various levels. Note, since scenarios take time, decreasing the load or turning the
+system off is not instantaneous. The system drains itself of work naturally and depending on the mix this could take seconds to minutes. Stac2 is inactive when the
+on/off control is light gray and none of the blue lights are on in the light grid at the bottom of the screen. Make sure to let stac2 go idle before restarting componets, etc.
+* **load selector** - the load selector is below the light grid and is used to select the scenario that you intend to run. If this control is empty, follow the edit/reset/main process outlined above.
+* **cloud selector** - leave this alone
+* **http request counter** - this green counter on the upper right shows the amount of http traffic sent to apps created by stac2 workloads, or in the case of static loads like xnf_*, traffic to existing apps.
+* **cc api calls** - this yellow counter shows the number of cloud foundry api calls executed per second
+* **results table** - this large tabluar region in the center of the screen shows the various api calls used by their scenarios displacyed as ~equivalent vmc commands.
+    * *total* - this column is the raw number of operations for this api row
+    * *<50ms* - this column shows the % of api calls that executed in less than 50ms
+    * *<100ms* - this column shows the % of api calls that executed in less than 100ms but more than 50ms. The column header misleads you to believe that this should include all of the <50% calls as well, but thats not the intent. Read this column as >50ms & <= 100ms.
+    * *<200ms, <400ms,...>3s* - these work as you'd expect per the above definitions
+    * *avg(ms)* - the average speed of the calls executed in this row
+    * *err* - the % of api calls for this row that failed, note, failures are displayed as a running log under the light grid. On ccng based cloud controllers the host IP in the display is a hyperlink that takes you to a
+    detail page showing all api calls and request id's that occured during the mix that failed. The request id can be used for log correleation while debugging the failure.
+* **results table http-request row** - this last row in the main table is similar to the previous description, but here the "api" is any http request to an app created by a scenario or a static app in the case of xnf based loads
+* **results table http-status row** - this row shows the breakdown of http response status (200's, 400's, 500's) as well as those that timed out
+* **email button** - if email is enabled in your cloud config, this button will serialize the results table and error log and send an email summary. Note, for non-email enabled clouds, the stac2 front end entrypoing "/ss2?cloud=cloud-name" will produce a full JSON dump as well.
+* **dirty users?** - great name... If you hit reset during an active run, or bounced your cloud under heavy activity, or restarted/repushed nabv or nabh during heavy activity, you likely left the system in a state where there
+are applications, services, routes, etc. that have not been properly cleared. If you see quota errors, or blue lights stuck on, thats another clue. Use this button on an idle system to ask stac2 to clean up these zombied apps and services.
+Under normal operation you will not need to use this as the system self cleans anywhere it can.
+* **reset** - this button flushes the redis instance at the center of the system wiping all stats, queues, error logs, etc. always use between runs on a fully quiet system. if you click on this where there is heavy activity, you will
+more than likley strand an application or two. If your system is serioulsy hosed then click reset, then vmc restart nabh; vmc restart nabv; then click reset again. This very hard reset yanks redis and restarts all workers.
+* **light grid** - each light, when on, represents an active worker in the nabv app currently running an instance of the selected load. For instance if a load is designed to simulate login, push, create-service, bind-service, delete, delete-service, if one worker is currently running
+the load, one light will be on. If 100 lights are on, then 100 workers are simultaneously executing the load. Since stac2 is designed to be able to mimic what a typical developer is doing in front of the system, you can think if the lights as representing
+how many simultaneously active users the system is servicing. Active means really active though so 100 active active users can easily mean 10,000 normal users.
 
 
 # Components
