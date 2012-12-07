@@ -39,6 +39,19 @@ cloud with reasonable stac2 concurrency seeing ~1,000 CC API calls per second (t
 If you see no activty, then click on the reset button above the load light grid and try again. Worst case, restart nabh, then nabv,
 hit the reset button, and then restart.
 
+# Trivia
+
+Where did the name stac2 come from? The Cloud Foundry project started with a codename of b20nine. This code name was inspired by Robert Scoble's [building43](http://www.building43.com/) a.k.a., a place where
+all the cool stuff at Google happened. The b20nine moniker was a mythical place on the Microsoft Campus (NT was mostly built in building 27, 2 away from b20nine)... Somewhere along the way, the b20nine long form
+was shortened to b29, which unfortunately was the name of a devestating machine of war. In an effort to help prevent Paul Maritz from making an embarassing joke using the b29 code name, a generic codename of "appcloud"
+was used briefly. The original STAC system was developed by Peter Kukol and in his words: "My current working acronym for the load testing harness is “STAC” which stands for the (hopefully) obvious
+name (“Stress-Testing of/for AppCloud”); I think that this is a bit better than ACLH, which doesn’t quite roll off the keyboard. If you can think of a better name / acronym, though, I’m certainly all ears."
+
+Like any good software engineer, I took Peter's original work and declared it "less than optimal" (a.k.a., a disaster) and decided that the only way to "fix it" was to do a complete and total re-write. This work was done
+during a 3 day non-stop coding session where I watched the sunrise twice before deciding I'm too old for this... The name Stac2 represents the second shot at building a system for "Stress-Testing of/for AppCloud"). I suppose
+I could have just as easily named it STCF but given rampant dyslexia in the developer community I was worried about typos like STFU, etc... So I just did the boring thing and named it Stac2. Given that
+both Peter and I cut our teeth up north in Redmond, I'm confident that there will be a 3rd try coming. Maybe that's a good time for a new name...
+
 # Stac2 Display and Controls
 
 Stac2 has several output only regions and only a small set of input controls.
@@ -76,13 +89,30 @@ how many simultaneously active users the system is servicing. Active means reall
 
 # Components
 
+Stac2 consists of several, statically defined Cloud Foundry applications and services. The [manifest.yml](https://github.com/cloudfoundry/stac2/blob/master/manifest.yml) is used by the master vmc push
+command to create and update a stac2 cluster. The list below describes each of the static components as well as their relationship to one and other.
+
 ## stac2
 
+The stac2 application is responsible for presenting the user interface of stac2. It's a simple, single-instance ruby/sinatra app. Multiple browser sessions may have this app open and each sessions will see
+the same data and control a single instance of a stac2 cluster. The bulk of the UI is written in JS which the page layout and template done in haml. When a stac2 run is in progress a lot of data is generated
+and the UI is supposed to feel like a realtime dashboard. As a result, there is very active JS based polling going on (10x/s) so its best have only a small number of browser sessions open at a time.
+
+One key entrypoint exposed by stac2 is the ability to capture all of the data rendered by the UI in it's raw JSON form (/ss2?cloud=name-of-cloud).
+
+The stac2 app is bound to the stac2-redis redis service-instance as well as the stac2-mongo mongodb service-instance.
+
 ## nabv
+
+The
 
 ## nabh
 
 ## nf
+
+## stac2-redis
+
+## stac2-mongodb
 
 # Workloads
 
