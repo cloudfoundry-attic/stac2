@@ -39,18 +39,7 @@ cloud with reasonable stac2 concurrency seeing ~1,000 CC API calls per second (t
 If you see no activty, then click on the reset button above the load light grid and try again. Worst case, restart nabh, then nabv,
 hit the reset button, and then restart.
 
-# Trivia
 
-Where did the name stac2 come from? The Cloud Foundry project started with a codename of b20nine. This code name was inspired by Robert Scoble's [building43](http://www.building43.com/) a.k.a., a place where
-all the cool stuff at Google happened. The b20nine moniker was a mythical place on the Microsoft Campus (NT was mostly built in building 27, 2 away from b20nine)... Somewhere along the way, the b20nine long form
-was shortened to b29, which unfortunately was the name of a devestating machine of war. In an effort to help prevent Paul Maritz from making an embarassing joke using the b29 code name, a generic codename of "appcloud"
-was used briefly. The original STAC system was developed by Peter Kukol and in his words: "My current working acronym for the load testing harness is “STAC” which stands for the (hopefully) obvious
-name (“Stress-Testing of/for AppCloud”); I think that this is a bit better than ACLH, which doesn’t quite roll off the keyboard. If you can think of a better name / acronym, though, I’m certainly all ears."
-
-Like any good software engineer, I took Peter's original work and declared it "less than optimal" (a.k.a., a disaster) and decided that the only way to "fix it" was to do a complete and total re-write. This work was done
-during a 3 day non-stop coding session where I watched the sunrise twice before deciding I'm too old for this... The name Stac2 represents the second shot at building a system for "Stress-Testing of/for AppCloud"). I suppose
-I could have just as easily named it STCF but given rampant dyslexia in the developer community I was worried about typos like STFU, etc... So I just did the boring thing and named it Stac2. Given that
-both Peter and I cut our teeth up north in Redmond, I'm confident that there will be a 3rd try coming. Maybe that's a good time for a new name...
 
 # Stac2 Display and Controls
 
@@ -86,7 +75,6 @@ more than likley strand an application or two. If your system is serioulsy hosed
 the load, one light will be on. If 100 lights are on, then 100 workers are simultaneously executing the load. Since stac2 is designed to be able to mimic what a typical developer is doing in front of the system, you can think if the lights as representing
 how many simultaneously active users the system is servicing. Active means really active though so 100 active active users can easily mean 10,000 normal users.
 
-
 # Components
 
 Stac2 consists of several, statically defined Cloud Foundry applications and services. The [manifest.yml](https://github.com/cloudfoundry/stac2/blob/master/manifest.yml) is used by the master vmc push
@@ -104,7 +92,14 @@ The stac2 app is bound to the stac2-redis redis service-instance as well as the 
 
 ## nabv
 
-The
+The application is the main work horse of the system for executing VMC style commands (a.k.a., Cloud Controller API calls). Note: The nab* prefix came from an earlier project around auto-scaling where
+what I needed was an apache bench like app that I could drive programatically. I built a node.JS app called nab (network ab) and this prefix stuck as I morphed the code into two components...
+
+The nabv app is a ruby/sinatra app that makes heavy use of the cfoundry gem/object model to make synchronous calls into cloud foundry. It's because of the synchronous nature of cfoundry that this app
+has so many instances. It is multi-threaded, so each instance drives more than one cfoundry client, but at this point given ruby's simplistic threading system nabv does not tax this at all...
+
+The app recieves all of its work via a set of work queue lists in the stac2-redis service-instance. Each worker does a blpop for a work item, and each work item represents scenario that the worker is supposed to run. The scenarios
+are described below but in a nutshell they are sets of commands/cloud controller APIs and http calls that should be made in order to simulate developer activity.
 
 ## nabh
 
@@ -117,3 +112,18 @@ The
 # Workloads
 
 # Clouds
+
+# Trivia
+
+Where did the name stac2 come from? The Cloud Foundry project started with a codename of b20nine. This code name was inspired by Robert Scoble's [building43](http://www.building43.com/) a.k.a., a place where
+all the cool stuff at Google happened. The b20nine moniker was a mythical place on the Microsoft Campus (NT was mostly built in building 27, 2 away from b20nine)... Somewhere along the way, the b20nine long form
+was shortened to B29, which unfortunately was the name of a devestating machine of war. In an effort to help prevent Paul Maritz from making an embarassing joke using the B29 code name, a generic codename of "appcloud"
+was used briefly.
+
+The original STAC system was developed by Peter Kukol during the "appcloud" era and in his words: "My current working acronym for the load testing harness is “STAC” which stands for the (hopefully) obvious
+name (“Stress-Testing of/for AppCloud”); I think that this is a bit better than ACLH, which doesn’t quite roll off the keyboard. If you can think of a better name / acronym, though, I’m certainly all ears."
+
+In March 2012, I decided to revisit the load generation framework. Like any good software engineer, I looked Peter's original work and declared it "less than optimal" (a.k.a., a disaster) and decided that the only way to "fix it" was to do a complete and total re-write. This work was done
+during a 3 day non-stop coding session where I watched the sunrise twice before deciding I'm too old for this... The name Stac2 represents the second shot at building a system for "Stress-Testing of/for AppCloud". I suppose
+I could have just as easily named it STCF but given rampant dyslexia in the developer community I was worried about typos like STFU, etc... So I just did the boring thing and named it Stac2. Given that
+both Peter and I cut our teeth up north in Redmond, I'm confident that there will be a 3rd try coming. Maybe that's a good time for a new name...
