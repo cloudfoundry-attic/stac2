@@ -1,0 +1,35 @@
+apps:
+
+  nf:
+    path: apps/nf
+    memory: 64
+    instances: 4
+    runtime: node06
+    framework: node
+
+  foo:
+    path: apps/foo
+    memory: 64
+    instances: 2
+    runtime: ruby18
+    framework: sinatra
+
+  fib:
+    path: apps/foo
+    memory: 64
+    instances: 2
+    runtime: ruby19
+    framework: sinatra
+
+  db_rails:
+    path: apps/db_rails
+    memory: 256
+    instances: 1
+    runtime: ruby19
+    framework: rails3
+
+  crashonboot:
+    path: apps/crashonboot
+    memory: 64
+    instances: 1
+    runtime: ruby18
