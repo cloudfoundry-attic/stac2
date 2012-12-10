@@ -155,7 +155,14 @@ launched.
 
 ## stac2-redis
 
+The stac2-redis service instance is a Redis 2.2 service instance that is shared by all core components (stac2, nabv, nabh). All of the runtime stats, counters, and exception logs are stored in redis. In addition,
+the instance is used as globally visible storage for the workload data thats stored/updated in Mongodb. When this mongo based data changes, or on boot, the redis based version of the data is updated.
+
 ## stac2-mongodb
+
+The stac2-mongo service instance is a MongoDB 2.0 service instance that us shared by the stac2 and nabv components. It's primary function is to act as the persistent storage for the workload definitions. Initiall
+the service is empty and the edit/reset workloads/main sequence highlighted in the beginning of this document is used to initialize the workloads collection. Workloads can also be added/modified/removed using the
+UI on the workload edit page and these go straight into stac2-mongo (and then from there, into stac2-redis for global, high speed availability).
 
 # Workloads
 
