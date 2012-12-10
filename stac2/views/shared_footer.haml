@@ -1,0 +1,11 @@
+%span#loginclicker powered by
+%a{ :href => "http://www.vmware.com", :target => '_blank'}vmware.com
+
+#loginwrapper
+  %form{:action => "/login", :method => "post"}
+    %label username
+    %input#username{:type => "text", :name => 'username'}
+    %label password
+    %input#password{:type => "password", :name => 'password'}
+    %input{:type => "submit", :value => "login"}
+

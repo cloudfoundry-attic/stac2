@@ -1,0 +1,249 @@
+workloads:
+  sys_sniff:
+    display: vmc target + login + apps ~ developer ping
+    load_multiplier: 10
+
+    operations:
+      # login, get situated
+      - op: sequence
+        actions:
+          - action: info
+          - action: login
+          - action: apps
+
+  sys_info:
+    display: simulate vmc target
+    load_multiplier: 12
+
+    operations:
+      # vmc target * 5
+      - op: sequence
+        actions:
+          - action: info
+          - action: info
+          - action: info
+          - action: info
+          - action: info
+
+  sys_v2test:
+    display: v2 playground
+    appnames:
+      - please-compute
+
+    spacenames:
+      - please-compute
+
+    operations:
+      - op: sequence
+        actions:
+          - action: info
+          - action: login
+
+      # app manipulation
+      - op: sequence
+        actions:
+          - action: create_space
+            spacename: 0
+          - action: create_app
+            app: foo
+            appname: 0
+          - action: delete_app
+            appname: 0
+          - action: delete_space
+            spacename: 0
+
+  sys_v2test_with_services:
+    display: v2 playground but with service creation
+    appnames:
+      - please-compute
+
+    servicenames:
+      - please-compute
+      - please-compute
+
+    spacenames:
+      - please-compute
+
+    operations:
+      - op: sequence
+        actions:
+          - action: info
+          - action: login
+          - action: apps
+
+      # app manipulation
+      - op: sequence
+        actions:
+          - action: create_space
+            spacename: 0
+          - action: create_app
+            app: foo
+            appname: 0
+            suspended: true
+          - action: create_service
+            service: mysql
+            servicename: 0
+          - action: create_service
+            service: mysql
+            plan: P200
+            servicename: 1
+          - action: bind_service
+            appname: 0
+            servicename: 0
+          - action: bind_service
+            appname: 0
+            servicename: 1
+          - action: start_app
+            appname: 0
+
+          - action: apps
+
+          - action: delete_app
+            appname: 0
+          - action: delete_service
+            servicename: 0
+          - action: delete_service
+            servicename: 1
+          - action: delete_space
+            spacename: 0
+
+  sys_test:
+    display: simulate all apis, cfoundry port
+    appnames:
+      - please-compute
+      - please-compute
+      - please-compute
+
+    servicenames:
+      - please-compute
+      - please-compute
+      - please-compute
+      - please-compute
+
+    operations:
+
+      # simple commands
+      - op: sequence
+        actions:
+          - action: info
+          - action: login
+          - action: apps
+          - action: system_services
+          - action: user_services
+
+      # app manipulation
+      - op: sequence
+        actions:
+          - action: create_app
+            app: foo
+            appname: 0
+          - action: create_app
+            app: foo
+            appname: 1
+            suspended: true
+          - action: start_app
+            appname: 1
+          - action: stop_app
+            appname: 1
+          - action: start_app
+            appname: 1
+          - action: app_info
+            appname: 0
+          - action: update_app
+            app: foo
+            appname: 0
+
+      # http traffic to the two apps.
+      # make sure they are started first though
+      - op: sequence
+        actions:
+          - action: pause
+            abs: 5
+          - action: http_operation
+            appname: 0
+            path: /foo
+            n: 10
+            c: 1
+          - action: http_operation
+            appname: 1
+            path: /bar
+            n: 10
+            c: 1
+          - action: http_drain
+
+      # app deletion
+      - op: sequence
+        actions:
+          - action: delete_app
+            appname: 0
+          - action: delete_app
+            appname: 1
+
+
+      # service creation
+      - op: sequence
+        actions:
+          - action: create_service
+            service: mysql
+            servicename: 0
+          - action: create_service
+            service: redis
+            servicename: 1
+          - action: create_service
+            service: postgresql
+            servicename: 2
+
+      # service deletion
+      - op: sequence
+        actions:
+          - action: delete_service
+            servicename: 0
+          - action: delete_service
+            servicename: 1
+          - action: delete_service
+            servicename: 2
+
+      # create rails app and bind to a mysql service
+      - op: sequence
+        actions:
+          - action: create_app
+            app: db_rails
+            appname: 2
+            suspended: true
+          - action: create_service
+            service: mysql
+            servicename: 3
+          - action: bind_service
+            appname: 2
+            servicename: 3
+          - action: start_app
+            appname: 2
+          - action: pause
+            abs: 10
+          - action: http_operation
+            appname: 2
+            path: /db/init
+            synchronous: true
+          - action: pause
+            abs: 2
+          - action: http_operation
+            appname: 2
+            path: /db/query
+            n: 4
+            c: 1
+          - action: http_operation
+            appname: 2
+            path: /db/update
+            n: 2
+            c: 1
+          - action: http_operation
+            appname: 2
+            path: /db/create
+            n: 2
+            c: 1
+          - action: http_drain
+          - action: delete_app
+            appname: 2
+          - action: delete_service
+            servicename: 3
+

@@ -1,0 +1,49 @@
+#center
+  %img{:id=>"xlogo", :class=>"logo", :src=>"/img/cloudfoundry-logo-ltblu-650x100.png"}
+
+  %h2 Stac2 Exception Log Record
+  #log_record
+    %table{:id=>'log_table', :class=>'log_table'}
+      %tr.data_row
+        %td.label
+          timestamp:
+        %td.value
+          #{l['tv']}
+      %tr.data_row
+        %td.label
+          dea ip:
+        %td.value
+          #{l['host']}
+      %tr.data_row
+        %td.label
+          stac action:
+        %td.value
+          #{l['action']}
+      %tr.data_row
+        %td.label
+          vmc exception:
+        %td.value
+          #{l['e']}
+      %tr.data_row
+        %td.label
+          user:
+        %td.value
+          #{l['user']}
+
+  %h2 CC API Actions, Status, Transaction ID Log
+  #cf_log
+    %table{:id=>'cf_log_table', :class=>'cf_log_table'}
+      -l['cflog'].each do |cfl|
+        %tr.data_row
+          %td{:class =>'elapsed_time'}
+            %div #{cfl['elapsed_time']}
+          %td{:class =>'request_id'}
+            %div #{cfl['request_id']}
+          %td{:class =>'method'}
+            %div #{cfl['method']}
+          %td{:class =>'status'}
+            %div #{cfl['status']}
+          %td{:class =>'url'}
+            %div #{cfl['url']}
+  #download
+    %a{:href => "#{dlurl}"} Download

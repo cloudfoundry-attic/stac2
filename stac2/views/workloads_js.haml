@@ -1,0 +1,62 @@
+:javascript
+
+  var MEM = [64,128,256,512,1024,2048];
+
+  function OnLoad() {
+
+    $("#uploadclicker").click(
+      function (event) {
+        $('#uploadwrapper').toggleClass("upload-active", true);
+      }
+    );
+
+    $(".delete_file").click(
+      function (event) {
+        // find the row we clicked on
+        var target = findActionTarget(event, "delete_file");
+        if (target) {
+          var id = target['id'];
+          var m = id.match('delete_file_(.*)');
+          if (m) {
+            var file_key = m[1];
+            $.getJSON("/workloads/delete?key=" + file_key, function(data) {
+              window.location = "/workloads";
+            });
+          }
+        }
+      }
+    );
+
+    function findActionTarget(event, matchClassName) {
+      var target = event.target;
+      while (target != null) {
+        var className = target.className;
+        if ( className && className.indexOf(matchClassName) >= 0) {
+          var rv = {'id' : target.id, 'target' : target }
+          return rv
+        }
+        target = target.parentNode;
+      }
+      return null
+    }
+
+    function getNumericId(id) {
+      id = id.substring(id.lastIndexOf("_")+1);
+      return parseInt(id);
+    }
+  }
+
+  function addCommas(nStr){
+    nStr += '';
+    x = nStr.split('.');
+    var x1 = x[0];
+    var x2 = x.length > 1 ? '.' + x[1] : '';
+    var rgx = /(\d+)(\d{3})/;
+    while (rgx.test(x1)) {
+      x1 = x1.replace(rgx, '$1' + ',' + '$2');
+    }
+    return x1 + x2;
+  }
+
+  // use jQuery onload rather than google.setOnLoadCallback()
+  $(document).ready(function() { OnLoad(); });

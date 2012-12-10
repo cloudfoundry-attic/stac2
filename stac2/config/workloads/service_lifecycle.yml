@@ -1,0 +1,36 @@
+workloads:
+  service_lifecycle:
+    display: create app, bind service, write data, delete
+
+    # set of static/dynamic appnames used in the template
+    # all referenced by index in the various actions
+    appnames:
+      - please-compute
+
+    servicenames:
+      - please-compute
+
+    operations:
+      # create a simple app
+      - op: sequence
+        actions:
+          - action: login
+          - action: pause
+            max: 8
+
+          - action: create_app
+            app: foo
+            appname: 0
+          - action: create_service
+            service: redis
+            servicename: 0
+          - action: bind_service
+            appname: 0
+            servicename: 0
+
+          - action: pause
+            max: 10
+          - action: delete_service
+            servicename: 0
+          - action: delete_app
+            appname: 0

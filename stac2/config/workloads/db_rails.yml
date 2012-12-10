@@ -1,0 +1,83 @@
+workloads:
+  db_rails:
+    display: generic rails DB app
+
+    # set of static/dynamic appnames used in the template
+    # all referenced by index in the various actions
+    appnames:
+      - please-compute
+
+    servicenames:
+      - please-compute
+
+    operations:
+      # create a simple app
+      - op: sequence
+        actions:
+          - action: login
+          - action: info
+          - action: apps
+          - action: info
+          - action: system_services
+          - action: create_app
+            app: db_rails
+            appname: 0
+            suspended: true
+          - action: create_service
+            service: mysql
+            plan: P200
+            servicename: 0
+          - action: bind_service
+            appname: 0
+            servicename: 0
+          - action: start_app
+            appname: 0
+
+      # init the db ~3s real to do init
+      - op: sequence
+        actions:
+          - action: pause
+            abs: 10
+          - action: http_operation
+            appname: 0
+            path: /db/init?n=250
+            synchronous: true
+          - action: pause
+            max: 8
+
+      # run a series of queries, inserts, and creates against the db
+      - op: loop
+        n: 8
+        operations:
+        - op: sequence
+          actions:
+            - action: http_operation
+              appname: 0
+              path: /db/query
+              n: 20
+              c: 4
+            - action: pause
+              max: 1
+
+            - action: http_operation
+              appname: 0
+              path: /db/update
+              n: 10
+              c: 1
+            - action: pause
+              max: 1
+
+            - action: http_operation
+              appname: 0
+              path: /db/create
+              n: 4
+              c: 1
+            - action: http_drain
+
+      # rundown the app/services
+      - op: sequence
+        actions:
+          - action: delete_app
+            appname: 0
+          - action: delete_service
+            servicename: 0

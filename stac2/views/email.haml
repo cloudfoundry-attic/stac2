@@ -1,0 +1,79 @@
+%html
+  -def nwd(number)
+    - if number
+      - parts = number.to_s.split('.')
+      - parts[0].gsub!(/(\d)(?=(\d\d\d)+(?!\d))/, "\\1,")
+      - parts.join('.')
+    - else
+      - return 0
+  %body{:style => "font-size: 14px; color: #676767; font-family: arial, sans-serif;"}
+    %div{:style=> "margin: 0 0 8px 0; font-family: arial,font-weight: normal;"}
+      %div{:style=>"color: #909090"} stac2::activity::report,#{as[:cloud]}::#{as[:raw][:tag]}
+      %div{:style=>"color: #909090"} stac2::uptime,#{as[:raw][:stats][:stats]['uptime']}, (#{as[:raw][:stats][:stats]['uptime_string']})
+
+    - if as[:errors] && as[:errors].length > 0
+      %h3{:style => "font-size: 1.1em; font-weight: bold; margin: 16px 0 0px 0; color: red;"} Errors
+      %table{:style => "width: 400px; border-spacing: 0px;"}
+        %tr
+          %th{:style => 'text-align: left; border-bottom: 1px solid #676767;'} action
+          %th{:style => 'text-align: right; border-bottom: 1px solid #676767;'} action count
+          %th{:style => 'text-align: right; border-bottom: 1px solid #676767;'} error count
+        -as[:errors].each do |data|
+          -# [0] = key, [1] = v
+          -v = data[1]
+          %tr
+            %td{:style => 'text-align: left; color: red;'}= v[:action_name]
+            %td{:style => 'text-align: right; color: red;'} #{nwd(v['action_count'])}
+            %td{:style => 'text-align: right; color: red;'} #{nwd(v['action_count_err'])}
+
+
+    - if as[:http_actions] && as[:http_actions].length > 0
+      %h3{:style => "font-size: 1.1em; font-weight: bold; margin: 16px 0px 0; color: #676767;"} Http Requests
+      %table{:style => "width: 400px; border-spacing: 0px;"}
+        -# [0] = key, [1] = v
+        -requests = as[:http_actions][0][1]
+        -responseStatus = as[:http_actions][1][1]
+        %tr
+          %th{:style => 'text-align: left; border-bottom: 1px solid #676767;'} requests
+          %th{:style => 'text-align: right; border-bottom: 1px solid #676767;'} 200's
+          %th{:style => 'text-align: right; border-bottom: 1px solid #676767;'} 400's
+          %th{:style => 'text-align: right; border-bottom: 1px solid #676767;'} 500's
+          %tr
+            %td{:style => 'text-align: left;'} #{nwd(requests['action_count'])}
+            %td{:style => 'text-align: right;'} #{nwd(responseStatus['resp_200'])}
+            %td{:style => 'text-align: right;'} #{nwd(responseStatus['resp_400'])}
+            %td{:style => 'text-align: right;'} #{nwd(responseStatus['resp_500'])}
+
+
+    %h3{:style => "font-size: 1.1em; font-weight: bold; margin: 16px 0 0px 0; color: #676767;"} Top Actions
+    %table{:style => "width: 400px; border-spacing: 0px;"}
+      %tr
+        %th{:style => 'text-align: left; border-bottom: 1px solid #676767;'} action
+        %th{:style => 'text-align: right; border-bottom: 1px solid #676767;'} action count
+        %th{:style => 'text-align: right; border-bottom: 1px solid #676767;'} < 100ms count
+      -as[:top_actions].each do |data|
+        -# [0] = key, [1] = v
+        -v = data[1]
+        -sum = 0
+        -sum = sum + v['action_count_50'].to_i if v['action_count_50']
+        -sum = sum + v['action_count_50_100'].to_i if v['action_count_50_100']
+        -sum = nwd(sum) if sum != 0
+        -sum = '' if sum == 0
+        %tr
+          %td{:style => 'text-align: left;'}= v[:action_name]
+          %td{:style => 'text-align: right;'} #{nwd(v['action_count'])}
+          %td{:style => 'text-align: right;'} #{sum}
+    - if as[:slow_actions] && as[:slow_actions].length > 0
+      %h3{:style => "font-size: 1.1em; font-weight: bold; margin: 16px 0 0px 0; color: #676767;"} Slow Actions
+      %table{:style => "width: 400px; border-spacing: 0px;"}
+        %tr
+          %th{:style => 'text-align: left; border-bottom: 1px solid #676767;'} action
+          %th{:style => 'text-align: right; border-bottom: 1px solid #676767;'} action count
+          %th{:style => 'text-align: right; border-bottom: 1px solid #676767;'} >1s actions
+        -as[:slow_actions].each do |data|
+          -# [0] = key, [1] = v
+          -v = data[1]
+          %tr
+            %td{:style => 'text-align: left;'}= v[:action_name]
+            %td{:style => 'text-align: right;'} #{nwd(v['action_count'])}
+            %td{:style => 'text-align: right;'} #{nwd(v['action_count_1s'])}

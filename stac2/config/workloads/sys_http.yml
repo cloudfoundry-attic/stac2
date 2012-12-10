@@ -1,0 +1,178 @@
+workloads:
+  sys_http:
+    display: relatively heacy http load against a newly created app
+    appnames:
+      - please-compute
+
+    operations:
+      - op: sequence
+        actions:
+          - action: login
+          - action: info
+
+      # create a simple app
+      - op: sequence
+        actions:
+          - action: pause
+            max: 8
+          - action: create_app
+            app: nf
+            appname: 0
+          - action: pause
+            abs: 5
+
+      - op: loop
+        n: 2
+        operations:
+          - op: sequence
+            actions:
+              - action: http_operation
+                appname: 0
+                path: /fast-echo
+                n: 50
+                c: 4
+              - action: http_drain
+
+      # delete the app
+      - op: sequence
+        actions:
+          - action: delete_app
+            appname: 0
+
+  xnf_http_1k:
+    display: heavy http load torgetting static nf, 1k transfers
+    appnames:
+      - nf
+
+    operations:
+      - op: loop
+        n: 1
+        operations:
+        - op: sequence
+          actions:
+            - action: info
+
+      - op: loop
+        n: 2
+        operations:
+          - op: sequence
+            actions:
+              - action: http_operation
+                appname: 0
+                path: /random-data?k=1k
+                n: 400
+                c: 4
+              - action: http_drain
+
+  xnf_http_16k:
+    display: heavy http load torgetting static nf, 16k transfers
+    appnames:
+      - nf
+
+    operations:
+      - op: loop
+        n: 1
+        operations:
+        - op: sequence
+          actions:
+            - action: info
+
+      - op: loop
+        n: 2
+        operations:
+          - op: sequence
+            actions:
+              - action: http_operation
+                appname: 0
+                path: /random-data?k=16k
+                n: 400
+                c: 4
+              - action: http_drain
+
+  xnf_http:
+    display: heavy http load torgetting static nf no response data
+    appnames:
+      - nf
+
+    operations:
+      - op: loop
+        n: 1
+        operations:
+        - op: sequence
+          actions:
+            - action: info
+
+      - op: loop
+        n: 2
+        operations:
+          - op: sequence
+            actions:
+              - action: pause
+                max: 0
+
+              - action: http_operation
+                appname: 0
+                path: /fast-echo
+                n: 1000
+                c: 4
+              - action: http_drain
+
+  xnf_http_fb_data:
+    display: simulate fb style page view ~130 requests, 800k total
+    appnames:
+      - nf
+
+    operations:
+      - op: loop
+        n: 1
+        operations:
+        - op: sequence
+          actions:
+            - action: info
+
+      - op: loop
+        n: 4
+        operations:
+          - op: sequence
+            actions:
+              - action: pause
+                max: 0
+
+              # 50 requests, 1k each for 50k
+              - action: http_operation
+                appname: 0
+                path: /random-data?k=1k
+                n: 50
+                c: 1
+
+
+              # 50 requests, 2k each for 100k
+              - action: http_operation
+                appname: 0
+                path: /random-data?k=2k
+                n: 50
+                c: 1
+
+              # 20 requests, 4k each for 80k
+              - action: http_operation
+                appname: 0
+                path: /random-data?k=4k
+                n: 20
+                c: 1
+
+              # 10 requests, 32k each for 320k
+              - action: http_operation
+                appname: 0
+                path: /random-data?k=32k
+                n: 10
+                c: 1
+
+              # 2 requests, 128k each for 256k
+              - action: http_operation
+                appname: 0
+                path: /random-data?k=128k
+                n: 2
+                c: 1
+
+              - action: http_drain
+

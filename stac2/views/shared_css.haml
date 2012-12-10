@@ -1,0 +1,691 @@
+%style(type = 'text/css')
+  :sass
+    body
+      background-color: #000000
+      margin: 0
+      font: 13px/1.4 "Helvetica Neue", "Lucida Grande", "Arial"
+      font-size: 13px
+      line-height: 1.5
+      -webkit-font-smoothing: antialiased
+      color: #dedede
+
+    $red_link: #dd3333
+    $red_visited: #777777
+    $red_hover: #777777
+
+    $vblue_link: #669cce
+    $vblue_visited: #777777
+    $vblue_hover: #32638e
+
+    $minor_link: #999999
+
+    // control/activity lights for scaling
+    $control_manual_mode_light_on: #F4C82F
+    $control_manual_mode_light_off: #303030
+    $control_manual_mode_light_dim: #F4C82F
+
+    $control_autoscale_mode_light_on: #F4C82F
+    $control_autoscale_mode_light_off: #303030
+    $control_autoscale_mode_light_dim: #F4C82F
+
+    $control_on_off_light_on: red
+    $control_on_off_light_off: #303030
+
+    $clock_color: #999999
+    $ccapi_rate_color: #F4C82F
+    $http_rate_color: green
+
+    // main lights
+    $light_on: #44B4E6
+    $load_light_on: #44B4E6
+
+    $bright_yellow_light: #F4C82F
+
+
+
+
+    $light_off: #303030
+
+    // main labels
+    $dark_label: #303030
+    $light_label: #999999
+    $light_text: #dedede
+
+    // main warning and good
+    $scale_up_color: green
+    $scale_down_color: red
+
+    $good_color: green
+    $warning_color: red
+
+    a
+      text-decoration: none
+      color: $vblue_link
+
+    a
+      text-decoration: none
+      color: $vblue_link
+
+    a:visited
+      color: $vblue_visited
+
+    a:hover
+      color: $vblue_hover
+      text-decoration: underline
+
+    p
+      font-size: 16px
+      font-weight: normal
+      margin: 4px 0px 0px 4px
+
+    h2.title
+      font-size: 30px
+      font-weight: bormal
+      margin: 0
+      position: absolute
+      top: 50px
+      left: 0px
+
+    h3
+      font-size: 28px
+      font-weight: normal
+      margin: 0 0 8px 0
+
+    ul
+      list-style-type: none
+      margin: 0 0 12px 0
+      padding: 0
+      display: block
+
+    #content
+      width: 1024px
+      margin-left: auto
+      margin-right: auto
+
+    .clear
+      clear: both
+
+    #header
+      text-align: right
+
+    #center_content
+      width: 1024px
+      padding: 2px 0 0 0px
+      float: left
+
+    #center
+      position: relative
+
+      #uptime_clock
+        position: absolute
+        top: 16px
+        right: 0px
+        color: $clock_color
+        font-size: 46px
+        padding: 0
+
+
+
+    #logo
+      position: absolute
+      top: 14px
+      left: 388px
+
+      h3
+        font-size: 30px
+        font-weight: normal
+        margin: 14px 0 0 0
+
+    #logo_nav
+      margin-top: 72px
+
+    #footer
+      clear: both
+      margin-top: 8px
+      text-align: left
+      font-size: 14px
+
+    #scale_panel
+      font-size: 40px
+      font-weight: normal
+      margin: 8px 0 0 0
+
+      #pending_messages_label
+        margin-right: 8px
+
+    #scale_panel.scale-up
+      #pending_messages_value
+        color: $scale_down_color
+
+    #scale_panel.scale-down
+      #pending_messages_value
+        color: $scale_up_color
+
+    #stats_panel
+      clear: both
+      margin-top: 8px
+
+
+    #stats_control_panel_fe
+      clear: both
+      margin-top: 12px
+
+    #stats_panel_fer_numbers,
+    #stats_panel_fem_numbers,
+    #stats_panel_bem_numbers
+      margin-top: 12px
+
+      .stats_panel_row
+        div
+          float: left
+
+      .stats_panel_row
+        color: $dark_label
+
+      .stats_panel_label
+        width: 250px
+
+      .stats_panel_count
+        color: $dark_label
+
+    #autoscale_log_panel
+
+    #exception_logs
+      line-height: 1.2em
+      height: 15em
+      overflow-y: auto
+      overflow-x: hidden
+      font-size: 14px
+      color: $light_text
+
+      .log-ts,
+      .log-action,
+      .log-description,
+      .log-user
+        margin-right: 8px
+
+      .log_row
+        height: 1.2em
+        line-height: 1.2em
+        overflow: hidden
+
+    #action_stats
+      table.action_stats
+        border-spacing: 0px
+        width: 100%
+        vertical-align: bottom
+        text-align: left
+
+      td.action_name
+        text-align: left
+        width: 175px
+
+      td.action_count
+        text-align: left
+        width: 75px
+
+
+      td.action_count_50,
+      td.action_count_50_100,
+      td.action_count_100_200,
+      td.action_count_200_400,
+      td.action_count_400_1s,
+      td.action_count_1s_2s,
+      td.action_count_2s_3s,
+      td.action_count_3s_5s,
+      td.action_count_5s,
+      td.action_count_avg,
+      td.action_count_err
+        text-align: left
+        width: 75px
+
+      tr.header_row
+        height: 2.2em
+
+        th
+          text-align: left
+          font-weight: normal
+          border-bottom: 3px solid $light_on
+
+      tr.data_row
+        height: 1.5em
+
+        td
+          border-bottom: 1px solid $dark_label
+
+      tr.http_status_row
+        height: 2.0em
+
+        td
+          border-top: 2px solid $light_on
+          border-bottom: 1px solid $dark_label
+
+        td.action_count,
+        td.rate_1s,
+        td.resp_200,
+        td.resp_400,
+        td.resp_500,
+          text-align: left
+          colspan: 2
+
+      #small_control_panel
+        margin-top: 8px
+
+        #checkusers,
+        #reset_stats,
+        #refresh
+          text-align: right
+          float: right
+
+        #email
+          float: left
+
+        #users
+          text-align: left
+          float: left
+          font-size: 14px
+          display: none
+
+        #users.dirty_users
+          display: block
+
+
+    #workload_table
+      border-spacing: 0px
+      width: 100%
+      vertical-align: top
+      td
+        padding: 0
+        text-align: left
+
+      tr.data_row
+        line-height: 3.5em
+        height: 3.5em
+        vertical-align: top
+        padding: 0 0 24px 0
+        td
+          border-bottom: 1px solid $light_label
+
+      td.delete
+        width: 30px
+        div.delete_file
+          font-size: 24px
+          font-weight: bold
+          color: $warning_color
+          cursor: pointer
+
+      td.file
+        width: 200px
+        font-size: 30px
+        font-weight: normal
+        color: $light_text
+        padding-left: 8px
+
+      td.workloads
+        font-size: 24px
+        font-weight: normal
+        color: $light_label
+        padding-left: 16px
+        padding-top: 13px
+        line-height: 1.1em
+        height: 1.1em
+
+    #wl_controls
+      text-align: right
+      font-size: 16px
+      font-weight: normal
+      cursor: pointer
+
+      a
+        text-decoration: underline
+        cursor: pointer
+        color: $minor_link
+      a:hover
+        color: $minor_link
+      a:visited
+        color: $minor_link
+
+    #activity_panel
+      clear: both
+      margin: 4px 0px
+      padding: 16px 0 8px 0
+      font-size: 12px
+
+
+      #concurrency_meter_panel
+        border-top: 3px solid $light_on
+        padding: 8px 0 0 0
+
+      h3
+        font-size: 16px
+        font-weight: normal
+        margin: 8px 0 0 0
+
+      table.activity_panel_table
+        border-spacing: 0px
+        vertical-align: top
+        text-align: center
+
+        tr
+          vertical-align: top
+        td
+          width: 41px
+          text-align: left
+
+
+        // instance rows
+        div.instance.instance_inactive
+          color: $light_off
+          span.label
+            color: $dark_label
+
+        div.instance.instance_active
+          color: $light_on
+          span.label
+            color: $light_label
+
+        div.instance
+          line-height: 12px
+          height: 12px
+          span.label
+            font-size: 10px
+          span.value
+            display: none
+            font-size: 10px
+
+      table.rate_table
+        border-spacing: 0px
+        width: 100%
+        vertical-align: top
+        td.label
+          width: 200px
+          text-align: left
+        td.value
+          width: 25px
+          text-align: right
+
+        tr
+          line-height: 1.5em
+          height: 1.6em
+          vertical-align: top
+        td
+          text-align: left
+
+        tr.rate-per-day
+          font-size: .8em
+          line-height: 1em
+          height: 18px
+          color: $light_label
+
+    #as_control
+      width: 94.25px
+      color: $light_off
+      .row
+        line-height: 20px
+        text-align: left
+        cursor: pointer
+
+        .light
+          font-size: 22px
+        .label
+          color: $light_label
+          font-weight: 200
+          font-size: 16px
+      #as_main_row
+        display: inline
+
+    #as_control.autoscale_on
+      .light
+        color: $control_autoscale_mode_light_on
+
+    #main_controls
+      width: 100%
+
+      table.mcwrapper
+        border-spacing: 0px
+        width: 100%
+        vertical-align: bottom
+        text-align: left
+
+        td.mcw_left
+          vertical-align: top
+          width: 400px
+
+        td.mcw_right
+          vertical-align: top
+          text-align: right
+          width: 225px
+
+        td.mcw_center
+          vertical-align: top
+          text-align: right
+          width: 375px
+
+        #action_rate
+          color: $ccapi_rate_color
+          font-size: 4em
+          line-height: 1em
+          padding: 0
+        #action_rate_label
+          color: $light_label
+          font-size: 14px
+
+        #http_action_rate
+          color: $http_rate_color
+          font-size: 4em
+          line-height: 1em
+          padding: 0
+        #http_action_rate_label
+          color: $light_label
+          font-size: 14px
+
+      table.main_control_table
+        border-spacing: 0px
+        width: 100%
+        vertical-align: bottom
+        text-align: left
+
+      tr.combo_control_row
+        height: 35px
+        .edit_control_wrapper
+          float: right
+          width: 30px
+          text-align: right
+          a
+            text-decoration: underline
+            cursor: pointer
+
+
+
+      td.combo_control_row
+        vertical-align: top
+
+      #workload_selector,
+      #cloud_selector
+        width: 355px
+        font-size: 16px
+        font-weight: normal
+        padding: 1px
+
+      table.load_table
+        border-spacing: 0px
+        width: 100%
+        vertical-align: top
+        td
+          padding: 0
+          text-align: left
+
+        tr.load_control_row
+          line-height: 24px
+          height: 24px
+          vertical-align: top
+
+        td.load_control_column
+          width: 65px
+
+        div.load_control
+          line-height: 24px
+          height: 24px
+
+        span.light
+          font-size: 26px
+          cursor: pointer
+
+        span.percent
+          font-size: 12px
+
+        .off
+          span.light
+            color: $light_off
+          span.percent
+            color: $dark_label
+
+        .on
+          span.light
+            color: $load_light_on
+          span.percent
+            color: $light_label
+
+        .hover
+          span.light
+            color: $load_light_on
+          span.percent
+            color: $light_label
+
+    #app_img_wrapper
+      display: none
+      position: absolute
+      top: 0px
+      left: 0px
+
+    #onoff_control
+      line-height: 24px
+      height: 24px
+      text-align: left
+      cursor: pointer
+      .light
+        opacity: 1.0
+        -moz-opacity: 1.0
+        color: $control_on_off_light_off
+      .percent
+        color: $dark_label
+
+    #onoff_control.powered_on
+      .light
+        opacity: 1.0
+        -moz-opacity: 1.0
+        color: $control_on_off_light_on
+      .percent
+        color: $light_label
+
+    .buttons
+      margin-top: 1em
+      .buttond
+        margin-bottom: 10px
+
+    #loginwrapper
+      visibility: hidden
+      display: inline
+
+    #loginwrapper.login-active
+      visibility: visible
+
+    #loginclicker
+      cursor: pointer
+
+    #uploadclicker
+      text-decoration: underline
+      color: $minor_link
+      cursor: pointer
+
+    #uploadwrapper
+      visibility: hidden
+      display: block
+      font-size: 16px
+      align: right
+      margin-top: 12px
+      input
+        font-size: 16px
+
+    #file
+      width: 308px
+      margin: 0px 4px
+
+    #load
+      padding-left: 8px
+      padding-right: 8px
+      margin: 0px 0px 0px 4px
+
+    #uploadwrapper.upload-active
+      visibility: visible
+
+    #log_record
+      font-size: 14px
+      color: $light_text
+      table
+        border-spacing: 0px
+        width: 1000px
+        text-align: left
+
+      td
+        vertical-align: top
+        text-align: left
+        div
+          height: 1.5em
+          line-height: 1.5em
+          overflow: hidden
+
+      td.label
+        text-align: right
+        padding-right: 8px
+        width: 100px
+
+    #cf_log
+      font-size: 12px
+      color: $light_text
+      table
+        border-spacing: 0px
+        width: 1000px
+        text-align: left
+
+      td
+        vertical-align: top
+        text-align: left
+        div
+          height: 1.5em
+          line-height: 1.5em
+          overflow: hidden
+
+      td.elapsed_time
+        div
+          width: 60px
+          padding-right: 4px
+
+      td.method
+        div
+          width: 35px
+          padding-right: 4px
+
+      td.status
+        div
+          width: 35px
+          padding-right: 4px
+
+      td.request_id
+        div
+          width: 250px
+          padding-right: 4px
+
+      td.url
+        div
+          width: 620px
+          padding-right: 4px
+
+      tr.data_row
+        height: 1.5em
+
+        td
+          border-bottom: 1px solid $dark_label
+
+    #download
+      margin-top: 12px

@@ -1,0 +1,16 @@
+!!! Strict
+%html(xmlns='http://www.w3.org/1999/xhtml')
+  =haml :shared_head, :layout => false
+  =haml :shared_jslibs, :layout => false
+  =haml :shared_css, :layout => false
+  =haml :shared_js, :layout => false
+  %body
+    #content
+      #header
+        =haml :shared_header, :layout => false
+      #leftnav
+        =haml :shared_leftnav, :layout => false
+      #center_content
+        =yield
+        #footer
+          =haml :shared_footer, :layout => false

@@ -1,0 +1,63 @@
+workloads:
+  app_loop:
+    display: simple app creation loop
+
+    appnames:
+      - please-compute
+      - please-compute
+
+    servicenames:
+      - please-compute
+      - please-compute
+
+    operations:
+      # login, get situated, run vmc apps and services
+      - op: sequence
+        actions:
+          - action: login
+          - action: info
+
+      # create a simple app
+      - op: sequence
+        actions:
+          - action: create_app
+            app: foo
+            appname: 0
+
+      # create a rails app
+      - op: sequence
+        actions:
+          - action: create_app
+            app: db_rails
+            appname: 1
+            suspended: true
+          - action: create_service
+            service: mysql
+            plan: P200
+            servicename: 0
+          - action: bind_service
+            appname: 1
+            servicename: 0
+          - action: start_app
+            appname: 1
+
+      # perform a few updates
+      - op: loop
+        n: 8
+        operations:
+          - op: sequence
+            actions:
+              - action: update_app
+                app: foo
+                appname: 0
+
+      # delete the apps
+      - op: sequence
+        actions:
+          - action: delete_app
+            appname: 0
+          - action: delete_app
+            appname: 1
+          - action: delete_service
+            servicename: 0
+

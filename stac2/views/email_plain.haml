@@ -1,0 +1,25 @@
+-def nwd(number)
+  - parts = number.to_s.split('.')
+  - parts[0].gsub!(/(\d)(?=(\d\d\d)+(?!\d))/, "\\1,")
+  - parts.join('.')
+#{s['title']} #{s['date']}
+Key Stats:
+
+total api calls: #{nwd(s['raw']['scores']['total::api_calls'])}
+total active users: #{nwd(s['raw']['scores']['total::unique_active_users'])}
+-# iterate over special, hoisted apis
+-s['hoisted_api'].each do |api_name|
+  #{api_name}: #{nwd(s[api_name]['score'])}
+
+Top API Calls (by frequency):
+-s['max_apis'].times do |i|
+  #{s['raw']['scores']['scored::top_apis'][i]['stat']}: #{nwd(s['raw']['scores']['scored::top_apis'][i]['score'])}
+
+
+Top Users (by CC interaction activity):
+-s['max_users'].times do |i|
+  #{s['raw']['scores']['scored::top_users'][i]['stat'].gsub('@', " @ ")}: #{nwd(s['raw']['scores']['scored::top_users'][i]['score'])}
+
+Top Hours of CC API Activity (UTC):
+-s['max_hours'].times do |i|
+  #{s['raw']['scores']['scored::top_activity_hour'][i]['stat']}: #{nwd(s['raw']['scores']['scored::top_activity_hour'][i]['score'])}

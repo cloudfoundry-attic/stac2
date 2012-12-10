@@ -1,0 +1,741 @@
+:javascript
+  var UI_UPDATE_TIMER = null;
+  var CLIENT = "dfjheuryejnfdn";
+  var LAST_ACTION_STATS = 0;
+
+  function OnLoad() {
+
+    $("#loginclicker").click(
+      function (event) {
+        $('#loginwrapper').toggleClass("login-active", true);
+      }
+    );
+
+    // load control handlers for hover and click
+    // click
+    $("#load_control_row").click(
+      function (event) {
+        // find the row we clicked on
+        var target = findActionTarget(event, "load_control");
+        if (target) {
+          var id = getNumericId(target['id']);
+          setAutoLoadTo(id, true, false);
+        }
+      }
+    );
+
+    function findActionTarget(event, matchClassName) {
+      var target = event.target;
+      while (target != null) {
+        var className = target.className;
+        if ( className && className.indexOf(matchClassName) >= 0) {
+          var rv = {'id' : target.id, 'target' : target }
+          return rv
+        }
+        target = target.parentNode;
+      }
+      return null
+    }
+
+    function getNumericId(id) {
+      id = id.substring(id.lastIndexOf("_")+1);
+      return parseInt(id);
+    }
+
+    // set ui state based on click, or first read,
+    // don't just power down
+    // powerDown();
+    setTimeout(
+      function(){
+        exec_loop()
+      }, 0);
+
+    // on/off control
+    $("#onoff_control").click(
+      function (event) {
+        if ($("#onoff_control").hasClass("powered_on")) {
+          powerDown();
+        } else {
+          powerUp();
+        }
+      }
+    );
+
+    // check users and clean them up
+    $("#check_users_button").click(
+      function (event) {
+        check_users();
+      }
+    );
+
+    // dismiss
+    $("#dismiss_button").click(
+      function (event) {
+        $("#users").toggleClass('dirty_users', false)
+      }
+    );
+
+    // reset
+    $("#reset_button").click(
+      function (event) {
+        reset();
+      }
+    );
+
+    // email
+    $("#email_button").click(
+      function (event) {
+        email();
+      }
+    );
+
+
+    wireupsliders();
+  }
+
+  REFRESH_FAST=100;
+  REFRESH_INIT=2000;
+  REFRESH=REFRESH_INIT;
+  function set_power_light(on) {
+    if (on) {
+      var already_on = $('#onoff_control').hasClass("powered_on");
+      $('#onoff_control').toggleClass("powered_on", true);
+      if (!already_on){
+        REFRESH=REFRESH_FAST;
+        setTimeout(
+          function(){
+            exec_loop()
+          }, 0);
+      }
+    } else {
+      REFRESH=REFRESH_INIT;
+      $('#onoff_control').toggleClass("powered_on", false);
+      setAutoLoadTo(0, true, true);
+      setTimeout(
+        function(){
+          exec_loop()
+        }, 0);
+    }
+  }
+
+  function powerDown() {
+    REFRESH=REFRESH_INIT;
+    $('#onoff_control').toggleClass("powered_on", false);
+    setAutoLoadTo(0, true, true);
+    setTimeout(
+      function(){
+        exec_loop()
+      }, 0);
+  }
+
+  function powerUp() {
+    $('#onoff_control').toggleClass("powered_on", true);
+    REFRESH=REFRESH_FAST;
+    setTimeout(
+      function(){
+        exec_loop()
+      }, 0);
+  }
+
+  var CLOUDS=null;
+  var WORKLOADS=null;
+  var CWL=null;
+  var MAXLOG=12;
+  var WORKLOAD_INDEXS = {};
+  var CLOUD_INDEXS = {};
+  function wireupsliders(){
+    $.getJSON("/cl", function(data) {
+      CLOUDS=data['clouds'];
+      WORKLOADS=data['workloads']['workloads']
+      CWL=data;
+
+      // until cloud selector changes,
+      // just base everything off of the default
+      // cloud
+      var currentCloud = CLOUDS[data['default_cloud']]
+      var cmax = currentCloud['cmax']
+      var default_workload = currentCloud['default_workload']
+
+      // populate and establish default
+      var i = 0;
+      for(var cn in CLOUDS) {
+        // wire up cloud selector
+        var o;
+        if (cn == data['default_cloud']) {
+          o = new Option(cn, cn, true, true);
+        } else {
+          o = new Option(cn, cn);
+        }
+        $('#cloud_selector').append(o);
+        CLOUD_INDEXS[cn] = i;
+        i = i+1;
+      }
+      $("#cloud_selector").change( function(){
+        // look at cloud's email setting and selectively
+        // enable/disable the email button based on the cloud's
+        // settings
+        var cv = $("#cloud_selector").val()
+        if (CLOUDS[cv] && CLOUDS[cv]['email']){
+          // enable email
+          $('#email_button').removeAttr('disabled');
+        } else {
+          $('#email_button').attr('disabled', '');
+        }
+        powerDown();
+      });
+
+      i = 0;
+      var sorted = [];
+      for(var wn in WORKLOADS) {
+        sorted.push(wn);
+      }
+      sorted = sorted.sort();
+      for(i=0; i<sorted.length; i++) {
+        var wn = sorted[i];
+        // wire up cloud selector
+        var o;
+        if (wn == default_workload) {
+          o = new Option(wn, wn, true, true);
+        } else {
+          o = new Option(wn, wn);
+        }
+        $('#workload_selector').append(o);
+        WORKLOAD_INDEXS[wn] = i;
+      }
+      $("#workload_selector").change( function(){
+        powerDown();
+      });
+    });
+  }
+
+  //
+  function email() {
+    var cloud = $("#cloud_selector").val()
+    if (cloud && cloud != null){
+      $.getJSON("/ems?cloud=" + cloud);
+    }
+  }
+
+
+  // reset
+  function reset() {
+    var cloud = $("#cloud_selector").val()
+    if (cloud && cloud != null){
+      //var answer = confirm("clear all stats for: " + cloud + "?");
+      //if ( answer ) {
+      $.getJSON("/rs?cloud=" + cloud, function(data) {background_refresh_clear();});
+      //}
+    }
+  }
+
+  function check_users() {
+    var cloud = $("#cloud_selector").val()
+    if (cloud && cloud != null){
+      $.getJSON("/cleanapps?cloud=" + cloud, function(data) {
+        if (data) {
+          render_users(data)
+        }
+      });
+    }
+
+    function render_users(s) {
+
+      var dirty_apps = 0;
+      var dirty_users = 0;
+      var dirty_services = 0;
+
+      dirty_services = s['user:stats_summary']['total_services_count']
+      dirty_apps = s['user:stats_summary']['total_app_count']
+      dirty_users = s['user:stats_summary']['users_with_apps'] + s['user:stats_summary']['users_with_services']
+
+      $("#users").toggleClass('dirty_users', true)
+      set_newvalue(dirty_users, "#dirty_users");
+      set_newvalue(dirty_apps, "#dirty_apps");
+      set_newvalue(dirty_services, "#dirty_services");
+    }
+  }
+
+  var ID_SFX = {
+    'action_name': '_an',
+    'action_count': '_ac',
+    'action_count_50': '_ac_50',
+    'action_count_50_100': '_ac_50_100',
+    'action_count_100_200': '_ac_100_200',
+    'action_count_200_400': '_ac_200_400',
+    'action_count_400_1s': '_ac_400_1s',
+    'action_count_1s_2s': '_ac_1s_2s',
+    'action_count_2s_3s': '_ac_2s_3s',
+    'action_count_3s': '_ac_3s',
+    'action_count_avg': '_ac_avg',
+    'action_count_err': '_ac_err',
+
+    // percents
+    'action_count_50_percent': '_ac_50_p',
+    'action_count_50_100_percent': '_ac_50_100_p',
+    'action_count_100_200_percent': '_ac_100_200_p',
+    'action_count_200_400_percent': '_ac_200_400_p',
+    'action_count_400_1s_percent': '_ac_400_1s_p',
+    'action_count_1s_2s_percent': '_ac_1s_2s_p',
+    'action_count_2s_3s_percent': '_ac_2s_3s_p',
+    'action_count_3s_percent': '_ac_3s_p',
+    'action_count_err_percent': '_ac_err_p',
+
+    // http columns
+    'action_count_h': '_ac2',
+    'resp_200': '_resp_200',
+    'resp_400': '_resp_400',
+    'resp_500': '_resp_500',
+    'resp_etimeout': '_resp_etimeout',
+    'resp_200_percent': '_resp_200_p',
+    'resp_400_percent': '_resp_400_p',
+    'resp_500_percent': '_resp_500_p',
+    'resp_etimeout': '_resp_etimeout'
+  }
+
+  // called by refresh button and periodic UI refresher
+  function background_refresh_clear() {
+    window.location.reload(true);
+  }
+
+  // called by refresh button and periodic UI refresher
+  function background_refresh() {
+    var cloud = $("#cloud_selector").val()
+    if (cloud && cloud != null){
+      $.getJSON("/ss2?cloud=" + cloud + "&since=" + LAST_ACTION_STATS, function(data) {
+        if (data) {
+          render_s(data, false)
+        }
+      });
+    }
+  }
+
+  var COLORS = {
+    'original': '#dedede',
+    'bright_blue': '#44b4e6',
+    'bright_yellow': '#F4C82F'
+  }
+
+  function render_s(s, wipe_mode) {
+   if (s['load']) {
+      var started = (s['load']['start'] == 'true');
+      var load_level = s['load']['load'];
+      var cloud = s['load']['cloud'];
+      var workload = s['load']['wl'];
+
+      if (started) {
+        // render the lights
+        setAutoLoadTo(load_level, false, true);
+        set_power_light(true);
+        // now look of the correct index in the cloud and workload
+        // selectors from the WORKLOAD_INDEXS and CLOUD_INDEXS
+        // and then set the selectedIndex property to the
+        // appropriate value. this will keep the selectors
+        // in sync with the server
+        var workload_index = WORKLOAD_INDEXS[workload];
+        if (workload_index != null && workload_index != undefined){
+          $('#workload_selector').prop('selectedIndex', workload_index);
+        }
+        var cloud_index = CLOUD_INDEXS[cloud];
+        if (cloud_index != null && cloud_index != undefined){
+          $('#cloud_selector').prop('selectedIndex', cloud_index);
+        }
+      } else {
+        set_power_light(false);
+        setAutoLoadTo(0, false, true);
+
+      }
+    }
+
+    if (wipe_mode) {
+      var as = s['action_counts']
+      // k will be app_info, apps, create_app, etc.
+      for (var k in as) {
+        for (var column in ID_SFX) {
+          var domid = "#" + k + ID_SFX[column];
+          if (column != 'action_name'){
+            // if dom node exists (indicated by .length >0)
+            // then clear the cell.
+            if ( $(domid).length > 0 ) {
+              console.log("clearing: " + domid);
+              $(domid).html('')
+            } else {
+              console.log("skipping: " + domid);
+            }
+          }
+        }
+      }
+      $("#uptime_clock").html("00:00:00")
+      $("#action_rate").html("")
+      $("#action_rate_label").html("")
+      $("#http_action_rate").html("")
+      $("#http_action_rate_label").html("")
+    } else {
+      // whip through each row in action counts
+      // and apply the data in the stats to the dom
+      // note existing dom value so that we can do
+      // fadeout updates to show activity
+      var as = s['action_counts']
+      // k will be app_info, apps, create_app, etc.
+      for (var k in as) {
+
+        // now enumerate the individual counts within each row
+        // count, <50ms, 50-100ms, etc.
+        for (var column in as[k]) {
+          if (ID_SFX[column]) {
+            var id_suffix = ID_SFX[column];
+            if (k == 'http-status' && id_suffix == '_ac') { id_suffix = '_ac2';}
+            var domid = "#" + k + id_suffix;
+            // if dom node exists (indicated by .length >0)
+            // then clear the cell.
+            if ( $(domid).length > 0 ) {
+              var oldvalue = $(domid).html();
+              var nv = as[k][column];
+              nv = addCommas(nv);
+              if (oldvalue != nv) {
+                set_newvalue(nv, domid)
+              }
+            }
+          }
+        }
+      }
+
+
+      // update the activity cells
+      var MAX = "#{$lights}"
+      var active = s['stats']['vmc_active_workers']
+      clear_activity_lights(MAX);
+      set_activity_lights(active, MAX);
+
+      $("#action_rate_label").html('cc api calls')
+      $("#http_action_rate_label").html('http requests')
+      if (s['stats'] && s['stats']['action_rate']) {
+        $("#action_rate").html(s['stats']['action_rate']+'/s')
+      } else {
+        $("#action_rate").html('0')
+      }
+      if (s['stats'] && s['stats']['http_rate']) {
+        $("#http_action_rate").html(s['stats']['http_rate']+'/s')
+      } else {
+        $("#http_action_rate").html('0')
+      }
+
+    }
+
+    // render the clock
+    // queue depth? with warning on oversize?
+    if (s['stats'] && s['stats']['uptime_string']){
+      $("#uptime_clock").html(s['stats']['uptime_string'])
+    }
+
+    // render exceptions
+    function extendNode(node, className, value, opt_title, opt_url) {
+      var new_node;
+      if (opt_url) {
+        new_node = document.createElement('a');
+        new_node.href = opt_url;
+      } else {
+        new_node = document.createElement('span');
+      }
+      if (opt_title) {
+        new_node.title = opt_title;
+      }
+      new_node.className = className;
+      new_node.innerHTML = value;
+      node.appendChild(new_node);
+    }
+
+    // render the log stream
+    var logStream = document.getElementById("exception_logs");
+    var log = s['elog']
+    if (log && log.length >0) {
+      for (var li=log.length-1; li>=0; li--){
+        var item = log[li]
+
+        // latch on to the tv as we whip through the log
+        // order of the records is in time order so at the end of the loop,
+        // this should contain the oldest seen log record
+        LAST_ACTION_STATS = item['tv'];
+
+        // no row exists so create the row
+        var logRow = document.createElement('div');
+        logRow.className = "log_row";
+
+        var line = document.createElement('div');
+        var d = new Date(item['tv']*1000);
+        var ds_local = d.toLocaleTimeString(); // not used
+        var ds_utc = d.toISOString().split('.')[0];
+        var ip = item['host'];
+        var url = null;
+        if (item['cflog'] && item['cflog'].length > 1 && item['_id'] && item['_id']['$oid']) {
+          url = '/showlog?oid=' + item['_id']['$oid'] + '&cloud=' + item['cloud'];
+        }
+        extendNode(line, "log-ts", ip, null, url);
+        extendNode(line, "log-ts", ds_utc, ds_local, null);
+        extendNode(line, "log-action", item['action'], null, null);
+        extendNode(line, "log-description", item['e'], null, null);
+        extendNode(line, "log-user", item['user'], null, null);
+        logRow.appendChild(line);
+        logStream.insertBefore(logRow, logStream.firstChild);
+
+        // note: used to do this trimming, but decided instead to
+        // make the log autoscroll
+        //now trim the dom as needed
+        //var nl = logStream.childNodes.length;
+        //var nukenodes = [];
+        //if (nl > MAXLOG) {
+        //  for(var ni=MAXLOG; ni<=nl; ni++) {
+        //    nukenodes.push(logStream.childNodes[ni])
+        //  }
+        //  for(var nni=0; nni< nukenodes.length; nni++) {
+        //    logStream.removeChild(nukenodes[nni]);
+        //  }
+        //}
+      }
+    }
+  }
+
+  function clear_activity_lights(max) {
+    for (var i=0; i<max; i++) {
+      var domid = "#iid_" + i;
+      // mark inactive
+      $(domid).toggleClass("instance_active", false)
+      $(domid).toggleClass("instance_inactive", true)
+    }
+  }
+
+  function set_newvalue(nv, domid) {
+    // note: reading old color to animate to is error prone
+    // once we get caught in the timer with a just started animation
+    // we loose it all. hard code the target instead...
+    var bgc = $(domid).css("color");
+    bgc = COLORS['original'];
+    $(domid).css("color", COLORS['bright_yellow'] );
+    $(domid).html(nv);
+    $(domid).animate({color: bgc}, 2500);
+  }
+
+  function set_activity_lights(on_count, max) {
+    for (var i=0; i<max; i++) {
+      var domid = "#iid_" + i;
+      if (on_count) {
+        if (i < on_count) {
+          $(domid).toggleClass("instance_active", true)
+          $(domid).toggleClass("instance_inactive", false)
+        } else {
+          // mark inactive
+          $(domid).toggleClass("instance_active", false)
+          $(domid).toggleClass("instance_inactive", true)
+        }
+      }
+    }
+  }
+
+  var loadMap = [1, 25,50,75,100];
+  var currentLoad = 0;
+  function setAutoLoadTo(load, and_run, absolute) {
+    // if current load is < load, light up
+    // all loads to current value and re-establish
+    // traffic
+    if ( absolute ) {
+        currentLoad = load;
+        setLoadLights(load);
+    } else {
+      if (load != currentLoad) {
+        currentLoad = load;
+        setLoadLights(load);
+      } else {
+        // clicked on the current load
+        // two cases. For anything over 25%
+        // lower the load to the next level down
+        // IFF current load is already at 25%,
+        // then reset load to 0
+        for (var j=loadMap.length; j >= 0; j--) {
+          if (load == loadMap[j]) {
+            if ( j > 0 ) {
+              currentLoad = loadMap[j-1];
+            } else {
+              currentLoad = 0;
+            }
+          }
+        }
+        setLoadLights(currentLoad);
+      }
+    }
+
+
+    if ( and_run ) {
+      runLoad(currentLoad);
+    }
+
+    function setLoadLights(l) {
+      var i;
+      var label;
+
+      // just turn on the powerlight and start
+      // various UI timers. Make sure not to
+      // let powerUp callback, hence the false
+      if (l>0) powerUp();
+
+      for (i=0; i<loadMap.length; i++) {
+        label = "#load_" + loadMap[i];
+        if (loadMap[i] <= l) {
+          $(label).toggleClass("off", false);
+          $(label).toggleClass("on", true);
+        } else {
+          $(label).toggleClass("off", true);
+          $(label).toggleClass("on", false);
+        }
+      }
+    }
+  }
+
+  // button number to load value
+  var LOAD_SETTINGS = [
+
+    // [0] - 25% load
+    {
+      load: 1,
+    },
+
+    // [1] - 25% load
+    {
+      load: 25,
+    },
+
+    // [2] - 50% load
+    {
+      load: 50,
+    },
+
+    // [3] - 75% load
+    {
+      load: 75,
+    },
+
+    // [4] - 100% load
+    {
+      load: 100,
+    }
+  ];
+
+  var LOAD_TABLE = {
+    currentLoad: LOAD_SETTINGS[0],
+    sequence: 0
+  };
+
+  // runLoad calls the stac server
+  // to ask it to run-load the the specified
+  // load level, on the specified cloud, specified cloud,
+  // the  the
+  function runLoad(load) {
+
+    // all done for load == 0 == off
+    var settings = { 'load' : 0};
+    if ( load != 0 ) {
+      settings = locateLoadSettings(load);
+    }
+    if ( settings == null) {
+      return;
+    }
+    if ($("#cloud_selector").val() == null || $("#workload_selector").val() == null) {
+      return;
+    }
+
+    // from settings we know the
+    // - load (1, 25, 50, 75, 100)
+    settings['activity'] = computeActivitySettings(settings);
+    executeSettings(settings);
+
+    function executeSettings(settings) {
+      // execute a GET to
+      // http://stac2....com?c=a.c&n=a.n&u=xxx
+      var url = '/';
+      url += "run-load?cloud=" + settings.activity.cloud;
+      url += "&c=" + settings.activity.c;
+      url += "&n=" + settings.activity.n;
+      url += "&wl=" + settings.activity.workload;
+      url += "&cmax=" + settings.activity.cmax;
+      url += "&load=" + settings.load;
+      url += "&host=" + settings.activity.host;
+      if (settings.load > 0) {
+        url += "&start=true";
+      } else {
+        url += "&start=false";
+      }
+      $.getJSON(url);
+    }
+
+    function computeActivitySettings(settings) {
+      // grab the selections
+      var cloud = $("#cloud_selector").val()
+      var workload = $("#workload_selector").val()
+
+      // compute cmax for the selected cloud
+      var cmax = CLOUDS[cloud]['cmax'];
+      var desiredCmax = Math.floor((settings.load/100.0) * cmax);
+      if (settings.load == 1) { desiredCmax =1; }
+      var n_times = 1;
+
+      // multiply N if we are at 75 or higher)
+      if (settings.load >= 75){
+        if (settings.load == 75){ n_times = 1; }
+        if (settings.load == 100){ n_times = 1; }
+      }
+
+      // now look to see if we are running a high load workload
+      // if so, multiply load as directed
+      var wl = WORKLOADS[workload]['load_multiplier'];
+      if (wl) {
+        wl = parseInt(wl)
+        if (wl > 500) {wl = 1;}
+        n_times = n_times * wl
+      }
+
+      return {
+        'cloud': cloud,
+        'workload': workload,
+        'c' : desiredCmax,
+        'cmax' : desiredCmax,
+        'n' : n_times * desiredCmax,
+        'host' : "#{$cloudsandworkloads['naburl']}"
+      }
+    }
+
+    // support function...
+    // given a load (0, 25, 50, 75, 100), return the index
+    // in the LOAD_SETTINGS_array
+    function locateLoadSettings(l) {
+      var rv = null;
+      for (var li=0; li<LOAD_SETTINGS.length; li++) {
+        var ls = LOAD_SETTINGS[li];
+        if (ls.load == l) {
+          rv = ls;
+          break;
+        }
+      }
+      return rv;
+    }
+  }
+
+  function exec_loop() {
+    clearInterval(UI_UPDATE_TIMER)
+    UI_UPDATE_TIMER = setInterval(
+      function(){
+        background_refresh()
+      }, REFRESH);
+  }
+
+  function addCommas(nStr){
+    nStr += '';
+    x = nStr.split('.');
+    var x1 = x[0];
+    var x2 = x.length > 1 ? '.' + x[1] : '';
+    var rgx = /(\d+)(\d{3})/;
+    while (rgx.test(x1)) {
+      x1 = x1.replace(rgx, '$1' + ',' + '$2');
+    }
+    return x1 + x2;
+  }
+
+  // use jQuery onload rather than google.setOnLoadCallback()
+  $(document).ready(function() { OnLoad(); });

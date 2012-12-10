@@ -1,0 +1,14 @@
+workloads:
+  wip_placeholder:
+    display: simulate vmc target
+    load_multiplier: 12
+
+    operations:
+      # vmc target * 5
+      - op: sequence
+        actions:
+          - action: info
+          - action: info
+          - action: info
+          - action: info
+          - action: info

@@ -1,0 +1,28 @@
+#center
+  %img{:id=>"xlogo", :class=>"logo", :src=>"/img/cloudfoundry-logo-ltblu-650x100.png"}
+
+  #workloadlist
+    #the_list
+      %table{:id=>'workload_table', :class=>'workload_table'}
+        -$wl.workload_files.each do |fb, wfdoc|
+          %tr.data_row
+            %td.delete
+              %div.delete_file{:id => "delete_file_#{fb}"} &#9587
+            %td.file
+              %div.file #{fb}
+            %td.workloads
+              %span.open [
+              -wfdoc.each_index do |i|
+                %span.key #{wfdoc[i]} #{i != wfdoc.size-1 ? ', ':''}
+              %span.close ]
+      #wl_controls
+        %a{:href => '/'} main
+        %a{:href => '/workloads?reload=true'} reset workloads
+        %span#uploadclicker upload
+        #uploadwrapper
+          %form{:action => "/workloads/upload", :method => "post", :enctype=>"multipart/form-data"}
+            %label workload file
+            %input#file{:type => "file", :name => 'wl_file'}
+            %input#load{:type => "submit", :value => "load"}
+
+  =haml :workloads_js, :layout => false

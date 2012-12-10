@@ -1,0 +1,181 @@
+#center
+  %img{:id=>"xlogo", :class=>"logo", :src=>"/img/cloudfoundry-logo-ltblu-650x100.png"}
+  #uptime_clock 00:13:10
+
+
+
+  #main_controls
+    -# implement a right and left section with float
+    %table{:class=>'mcwrapper'}
+      %tr
+        %td.mcw_left
+          %table{:class=>'main_control_table'}
+            %tr.combo_control_row
+              %td{:colspan =>2, :class => 'combo_control_row'}
+                %table{:class=>"load_table"}
+                  %tr{:id=>"load_control_row"}
+                    %td{:class=>"load_control_column"}
+                      #onoff_control
+                        %span.light &#9605;
+                        %span.percent on
+
+                    %td{:class=>"load_control_column"}
+                      #load_1{:class=>"off load_control"}
+                        %span.light &#9605;
+                        %span.percent low
+
+                    %td{:class=>"load_control_column"}
+                      #load_25{:class=>"off load_control"}
+                        %span.light &#9605;
+                        %span.percent 25%
+
+                    %td{:class=>"load_control_column"}
+                      #load_50{:class=>"off load_control"}
+                        %span.light &#9605;
+                        %span.percent 50%
+                    %td{:class=>"load_control_column"}
+                      #load_75{:class=>"off load_control"}
+                        %span.light &#9605;
+                        %span.percent 75%
+                    %td{:class=>"load_control_column"}
+                      #load_100{:class=>"off load_control"}
+                        %span.light &#9605;
+                        %span.percent 100%
+
+            %tr.combo_control_row
+              %td{:colspan =>2, :class => 'combo_control_row'}
+                %select{:id=>'workload_selector'}
+                %div.edit_control_wrapper
+                  %a{:href => '/workloads'} edit
+
+            %tr.combo_control_row
+              %td{:colspan =>2, :class => 'combo_control_row'}
+                %select{:id=>'cloud_selector'}
+
+
+        %td.mcw_center
+          #http_action_rate
+          #http_action_rate_label
+
+        %td.mcw_right
+          #action_rate
+          #action_rate_label
+
+
+  #stats_panel
+    #action_stats
+      %table.action_stats
+        %tr.header_row
+          %th.action_name
+            Action
+          %th.action_count
+            Total
+          %th.action_count_50
+            < 50ms
+          %th.action_count_50_100
+            < 100ms
+          %th.action_count_100_200
+            < 200ms
+          %th.action_count_200_400
+            < 400ms
+          %th.action_count_400_1s
+            < 1s
+          %th.action_count_1s_2s
+            < 2s
+          %th.action_count_2s_3s
+            < 3s
+          %th.action_count_3s
+            > 3s
+          %th.action_count_avg
+            avg(ms)
+          %th.action_count_err
+            err
+
+        -$actions.each do |data|
+          -k = data[0]
+          -v = data[1]
+          %tr.data_row
+            %td.action_name
+              %span{:id=>"#{k}_an", :class=>'active'} #{v}
+            %td.action_count
+              %span{:id=>"#{k}_ac", :class=>'active'}
+            %td.action_count_50
+              %span{:id=>"#{k}_ac_50_p", :class=>'active'}
+            %td.action_count_50_100
+              %span{:id=>"#{k}_ac_50_100_p", :class=>'active'}
+            %td.action_count_100_200
+              %span{:id=>"#{k}_ac_100_200_p", :class=>'active'}
+            %td.action_count_200_400
+              %span{:id=>"#{k}_ac_200_400_p", :class=>'active'}
+            %td.action_count_400_1s
+              %span{:id=>"#{k}_ac_400_1s_p", :class=>'active'}
+            %td.action_count_1s_2s
+              %span{:id=>"#{k}_ac_1s_2s_p", :class=>'active'}
+            %td.action_count_2s_3s
+              %span{:id=>"#{k}_ac_2s_3s_p", :class=>'active'}
+            %td.action_count_3s
+              %span{:id=>"#{k}_ac_3s_p", :class=>'active'}
+            %td.action_count_avg
+              %span{:id=>"#{k}_ac_avg", :class=>'active'}
+            %td.action_count_err
+              %span{:id=>"#{k}_ac_err_p", :class=>'active'}
+
+        -# http status row
+        -k = 'http-status'
+        %tr.http_status_row
+          %td.action_name
+            %span{:id=>"#{k}_an", :class=>'active'} #{k}
+          %td{:colspan =>2, :class => 'resp_200'}
+            %span{:class=>'label'}200's:&nbsp;
+            %span{:id=>"#{k}_resp_200_p", :class=>'active'}
+          %td{:colspan =>3, :class => 'resp_400'}
+            %span{:class=>'label'}400's:&nbsp;
+            %span{:id=>"#{k}_resp_400", :class=>'active'}
+          %td{:colspan =>3, :class => 'resp_500'}
+            %span{:class=>'label'}500's:&nbsp;
+            %span{:id=>"#{k}_resp_500", :class=>'active'}
+          %td{:colspan =>3, :class => 'resp_etimeout'}
+            %span{:class=>'label'}etimeout:&nbsp;
+            %span{:id=>"#{k}_resp_etimeout", :class=>'active'}
+
+      #small_control_panel
+        #email
+          %button{:class => 'email_button', :id => 'email_button'} email
+        #users
+          %span.label dirty users
+          %span{:class => 'count', :id => "dirty_users"}
+
+          %span.label dirty apps
+          %span{:class => 'count', :id => "dirty_apps"}
+
+          %span.label dirty services
+          %span{:class => 'count', :id => "dirty_services"}
+
+          %button{:class => 'dismiss_button', :id => 'dismiss_button'} dismiss
+
+        #reset_stats
+          %button{:class => 'reset_button', :id => 'reset_button'} reset
+
+        #checkusers
+          %button{:class => 'check_users_button', :id => 'check_users_button'} dirty users?
+
+    #activity_panel
+      #concurrency_meter_panel
+        %table{:class=>"activity_panel_table"}
+          -instance = 0
+          -1.times do |set|
+            %tr
+              -# 16 columns then 4 rows for 64
+              -# shrink goal 4x16 or 22x32...
+              -24.times do |column|
+                %td
+                  -1.times do |light|
+                    -$ui_size.times do |lght|
+                      -iid = "iid_#{instance}"
+                      %div{:id=>"#{iid}", :class=>"instance instance_inactive"}
+                        %span.light &#9605;
+                        %span.label #{instance}
+                        -instance = instance + 1
+    #exception_logs
+
+  =haml :shared_stats_js, :layout => false
