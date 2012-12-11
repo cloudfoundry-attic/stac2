@@ -12,17 +12,16 @@
 # 1) for addressing settings the config needs to supply
 # - the short name of the cloud, typically a one word alias like staging, prod, p01, p02, etc. This key is used
 #   internally and in the various UIs to remind the user which cloud is being tested
-# - the control_domain of the cloud. For classic cloud foundry, apps and system api's live on the same domain.
+# - the cc_target of the cloud. For classic cloud foundry, apps and system api's live on the same domain.
 #   for next generation/v2 cloud foundry, apps are served off of a domain that's different than the api domain.
-#   the control domain property should match the domain used in the vmc target command for this cloud, but minus
-#   the api prefix
+#   the cc_target is the cloud controller address the vmc target command for this cloud
 # - the app_domain of the cloud. This is the base domain that apps are served from (see previous).
 #
 # If we assume a v1 cloud, named staging, living at cf01.qa.las01.vcsops.com, the following three
 # properties would be used
 #
 # shortname: staging
-# control_domain: cf01.qa.las01.vcsops.com
+# cc_target: api.cf01.qa.las01.vcsops.com
 # app_domain: cf01.qa.las01.vcsops.com
 #
 # 2) the email section is optional. If present, and configured correctly, you can click on the email
