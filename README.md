@@ -9,6 +9,7 @@ Installing/running Stac2 on your Cloud Foundry instance requires a small amount 
 
 * clone the stac2 repo "git clone git@github.com:cloudfoundry/stac2.git"
 * create a cloud config file for your cloud into nabv/config/clouds
+* nabv will not start without a properly configured cloud config file so read the [sample config](https://github.com/cloudfoundry/stac2/blob/master/nabv/config/clouds/sample-config.yml) file carefully
 * create user accounts used by stac2 using "vmc register"
 * note, you must use vmc version 0.4.2 or higher.
 * from the stac2 repo root, where the manifest.yml file is run vmc push (note, you must have vmc 4.2 or higher, cfoundry 0.4.6 or higher, and manifests-vmc-plugin 0.4.17 or higher for the push to succeed)
@@ -81,9 +82,7 @@ Stac2 consists of several, statically defined Cloud Foundry applications and ser
 command to create and update a stac2 cluster. The list below describes each of the static components as well as their relationship to one and other.
 
 ## stac2
-TODO: ADD LINKS
-
-The stac2 application is responsible for presenting the user interface of stac2. It's a simple, single-instance ruby/sinatra app. Multiple browser sessions may have this app open and each sessions will see
+The [stac2](https://github.com/cloudfoundry/stac2/tree/master/stac2) application is responsible for presenting the user interface of stac2. It's a simple, single-instance ruby/sinatra app. Multiple browser sessions may have this app open and each sessions will see
 the same data and control a single instance of a stac2 cluster. The bulk of the UI is written in JS which the page layout and template done in haml. When a stac2 run is in progress a lot of data is generated
 and the UI is supposed to feel like a realtime dashboard. As a result, there is very active JS based polling going on (10x/s) so its best have only a small number of browser sessions open at a time.
 
@@ -94,9 +93,7 @@ One key entrypoint exposed by stac2 is the ability to capture all of the data re
 The stac2 app is bound to the stac2-redis redis service-instance as well as the stac2-mongo mongodb service-instance.
 
 ## nabv
-TODO: ADD LINKS
-
-The nabv application is the main work horse of the system for executing VMC style commands (a.k.a., Cloud Controller API calls). Note: The nab* prefix came from an earlier project around auto-scaling where
+The [nabv](https://github.com/cloudfoundry/stac2/tree/master/nabv) application is the main work horse of the system for executing VMC style commands (a.k.a., Cloud Controller API calls). Note: The nab* prefix came from an earlier project around auto-scaling where
 what I needed was an apache bench like app that I could drive programatically. I built a node.JS app called nab (network ab) and this prefix stuck as I morphed the code into two components...
 
 The nabv app is a ruby/sinatra app that makes heavy use of the cfoundry gem/object model to make synchronous calls into cloud foundry. It's because of the synchronous nature of cfoundry that this app
@@ -116,9 +113,7 @@ The nabv application is connected to the stac2-redis and stac2-mongo services. I
 exception occurs it spills the exception into the exception log list, it uses redis to track active workers, and as discussed before, it uses a redis list to recieve work items requesting it to run various scenarios.
 
 ## nabh
-TODO: ADD LINKS
-
-The nabh application is a node.JS app and internally is made up of two distinct servers. One server, the http-server, is responsible for accepting work requests via http calls from either stac2, or from nabv. From stac2, the work requests are
+The [nabh](https://github.com/cloudfoundry/stac2/tree/master/nabh) application is a node.JS app and internally is made up of two distinct servers. One server, the http-server, is responsible for accepting work requests via http calls from either stac2, or from nabv. From stac2, the work requests are
 of the form: "run the sys_info scenario, across N clients, Y times". The nabh app takes this sort of request and turns this into N work items. These are pushed onto the appropriate work list in stac2-redis where they are eventually picked by by
 nabv. From nabv, the work requests are of the form: "run 5000 HTTP GET from N concurrent connections to the following URL". The nabh app takes this sort of requests and turns this into N http work items. These are also pushed into stac2-redis, but in
 this case, this work list is not processed by nabv. Instead it's processed by the other server, the http worker.
@@ -132,9 +127,7 @@ the other pool of workers lives as a separate server running in the context of t
 The nabh app is connected to the stac2-redis service where it both reads/writes the work queues and where it does heavy recording of stats and counters related to http calls.
 
 ## nf
-TODO: ADD LINKS
-
-The nf app is not a core piece of stac2. Instead its an extra app that is used by some of the heavy http oriented workloads; specifically, those starting with **xnf_**. The app is created staticaly and because of that,
+The [nf](https://github.com/cloudfoundry/stac2/tree/master/nf) app is not a core piece of stac2. Instead its an extra app that is used by some of the heavy http oriented workloads; specifically, those starting with **xnf_**. The app is created staticaly and because of that,
  heavy http scenarios can throw load at it without first launching an instance. Within the Cloud Foundry team, we use this app and the related **xnf_** workloads to stress test the firewalls, load balancers, and cloud foundry
  routing layer.
 

@@ -9,6 +9,7 @@ spec_reports
 spec_coverage
 ci-artifacts-dir
 ci-working-dir
+*.com.config.yml
 *.rbc
 *.swp
 .rvmrc
