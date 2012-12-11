@@ -13,6 +13,7 @@ Installing/running Stac2 on your Cloud Foundry instance requires a small amount 
 * create user accounts used by stac2 using "vmc register"
 * note, you must use vmc version 0.4.2 or higher.
 * from the stac2 repo root, where the manifest.yml file is run vmc push (note, you must have vmc 4.2 or higher, cfoundry 0.4.6 or higher, and manifests-vmc-plugin 0.4.17 or higher for the push to succeed)
+* note: when pushing to a v2 cloud use v2-manifest.yml, vmc push -m v2-manifest.yml
 * based on the size of your cloud and desired concurrency you will need to adjust the instance counts of nabv, nabh, and nf
     * nabv should be sized to closely match the concurrency setting in your cloud config. It should be a little over half your desired concurrecny.
     for a large production cloud with a cmax of 192 set the instance count of nabv to ~100 (vmc scale nabv --instances 100)
