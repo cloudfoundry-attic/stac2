@@ -118,17 +118,16 @@ class VmcWorkItem
     end
     @apps = apps.clone
     assignUser
+    @target = "http://#{@cloud['cc_target']}"
     if @cloud['mode'] == 'v2'
       @v2cache = JSON.parse(@redis.get("vmc::#{@cloud['shortname']}::v2cache"))
       @cloudmode = :v2
       @spacename = @cloud['space']
       @orgname = @cloud['org']
-      @target = "http://ccng.#{@cloud['control_domain']}"
       @appdomain = nil
     else
       @appdomain = @cloud['app_domain']
       @cloudmode = :v1
-      @target = "http://api.#{@cloud['control_domain']}"
     end
     allocateNames 'appname', @t['appnames'] if @t['appnames']
     allocateNames 'servicename', @t['servicenames'] if @t['servicenames']

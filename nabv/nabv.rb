@@ -165,7 +165,7 @@ end
 
 def setupv2_constants(cloud)
   v2 = {}
-  target = "http://ccng.#{cloud['control_domain']}"
+  target = "http://#{cloud['cc_target']}"
   v2['target'] = target
   cfclient = CFoundry::Client.new(target)
   cfclient.login({:username => cloud['users'][0]['name'], :password => cloud['users'][0]['password']})
