@@ -123,9 +123,9 @@ mc = {:host => mongo['credentials']['host'],
               :username => mongo['credentials']['username'],
               :password => mongo['credentials']['password']}
 mc[:connection_string] = "mongodb://#{mc[:username]}:#{mc[:password]}@#{mc[:host]}:#{mc[:port]}/#{mc[:db]}"
-$log.debug("mongo: #{mongo.pretty_inspect}, mc: #{mc.pretty_inspect}")
+#$log.debug("mongo: #{mongo.pretty_inspect}, mc: #{mc.pretty_inspect}")
 $mongo = Mongo::Connection.new(mc[:connection_string])
-$log.debug("mongo(1a): Mongo::Connection.new(#{mc[:connection_string]}) --> #{$mongo.pretty_inspect}")
+#$log.debug("mongo(1a): Mongo::Connection.new(#{mc[:connection_string]}) --> #{$mongo.pretty_inspect}")
 $mongodb = $mongo.db(mc[:db])
 
 
@@ -148,7 +148,7 @@ def reconfig(do_v2)
   # kill the workload hash and then reload from mongo
   $redis_t3.del("vmc::workloadhash")
   workloads.find.each do |wldoc|
-    $log.debug("rc(0): wldoc['__key__'] => #{wldoc['__key__']}, wldoc => #{wldoc.pretty_inspect}")
+    #$log.debug("rc(0): wldoc['__key__'] => #{wldoc['__key__']}, wldoc => #{wldoc.pretty_inspect}")
     $workloads['workloads'][wldoc['__key__']] = wldoc
     wlkey = wldoc['__key__']
     $redis_t3.sadd("vmc::workloads", wlkey)
@@ -159,48 +159,62 @@ def reconfig(do_v2)
   $redis_t3.set("vmc::nabvurl", $nabvurl)
   $log.debug("reconfig: #{do_v2}, instance: #{$vcap_app['instance_index']}")
   if do_v2
-    setupv2_constants($default_cloud) if $default_cloud['mode'] == 'v2'
+    setup_constants($default_cloud)
   end
 end
 
-def setupv2_constants(cloud)
+def setup_constants(cloud)
   v2 = {}
   target = "http://#{cloud['cc_target']}"
   v2['target'] = target
-  cfclient = CFoundry::Client.new(target)
-  cfclient.login({:username => cloud['users'][0]['name'], :password => cloud['users'][0]['password']})
+  begin
+    $log.debug("sv2: login #{target} #{cloud['users'][0]['name']}/#{cloud['users'][0]['password']}")
+    cfclient = CFoundry::Client.new(target)
+    cfclient.login({:username => cloud['users'][0]['name'], :password => cloud['users'][0]['password']})
+  rescue Exception => e
+    puts "exception during login #{target} #{cloud['users'][0]['name']}/#{cloud['users'][0]['password']}"
+    puts e.pretty_inspect
+  end
 
-  # cache cloud's space and org guid
-  v2['org'] = {}
-  v2['org']['name'] = cloud['org']
-  v2['space'] = {}
-  v2['space']['name'] = cloud['space']
-  cfclient.current_organization = cfclient.organization_by_name(v2['org']['name'])
-  cfclient.current_space = cfclient.space_by_name(v2['space']['name'])
-  v2['org']['id'] = cfclient.current_organization.guid
-  v2['space']['id'] = cfclient.current_space.guid
+  if $default_cloud['mode'] == 'v2'
+    # cache cloud's space and org guid
+    v2['org'] = {}
+    v2['org']['name'] = cloud['org']
+    v2['space'] = {}
+    v2['space']['name'] = cloud['space']
+    cfclient.current_organization = cfclient.organization_by_name(v2['org']['name'])
+    cfclient.current_space = cfclient.space_by_name(v2['space']['name'])
+    v2['org']['id'] = cfclient.current_organization.guid
+    v2['space']['id'] = cfclient.current_space.guid
+  end
 
   # cache frameworks and runtimes
   v2['frameworks'] = {}
   frameworks = cfclient.frameworks
   frameworks.each do |fw|
-    v2['frameworks'][fw.name] = fw.guid
+    $log.debug("sec: fw == #{fw.name}")
+    v2['frameworks'][fw.name] = fw.name
+    v2['frameworks'][fw.name] = fw.guid if $default_cloud['mode'] == 'v2'
   end
   v2['runtimes'] = {}
   runtimes = cfclient.runtimes
   runtimes.each do |rt|
-    v2['runtimes'][rt.name] = rt.guid
+    $log.debug("sec: rt == #{rt.name}")
+    v2['runtimes'][rt.name] = rt.name
+    v2['runtimes'][rt.name] = rt.guid if $default_cloud['mode'] == 'v2'
   end
 
   # cache service plans
-  v2['services'] = {}
-  services = cfclient.services
-  services.each do |s|
-    $log.debug("s: #{s.label}, #{s.provider}, #{s.version}")
-    s.service_plans.each do |sp|
-      $log.debug("sp: #{sp.name}, #{sp.guid}")
-      v2['services'][s.label] = sp.guid if sp.name.casecmp("D100") == 0
-      v2['services']["#{s.label}:::#{sp.name}"] = sp.guid
+  if $default_cloud['mode'] == 'v2'
+    v2['services'] = {}
+    services = cfclient.services
+    services.each do |s|
+      $log.debug("s: #{s.label}, #{s.provider}, #{s.version}")
+      s.service_plans.each do |sp|
+        $log.debug("sp: #{sp.name}, #{sp.guid}")
+        v2['services'][s.label] = sp.guid if sp.name.casecmp("D100") == 0
+        v2['services']["#{s.label}:::#{sp.name}"] = sp.guid
+      end
     end
   end
   $log.debug("sv2: v2-s #{v2.pretty_inspect}")
