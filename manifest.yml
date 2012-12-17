@@ -7,10 +7,12 @@ applications:
     instances: 16
     runtime: node06
     framework: node
+    plan: P200
     services:
       stac2-redis:
-        tier: free
-        vendor: redis
+        provider: core  
+        plan: P200
+        label: redis
         version: "2.2"
   ./nabv:
     name: nabv
@@ -19,14 +21,17 @@ applications:
     instances: 16
     runtime: ruby18
     framework: sinatra
+    plan: P200
     services:
       stac2-redis:
-        tier: free
-        vendor: redis
+        provider: core  
+        plan: P200
+        label: redis
         version: "2.2"
       stac2-mongo:
-        tier: free
-        vendor: mongodb
+        provider: core  
+        plan: P200
+        label: mongodb
         version: "2.0"
   ./stac2:
     name: stac2
@@ -35,14 +40,17 @@ applications:
     instances: 1
     runtime: ruby18
     framework: sinatra
+    plan: P200
     services:
       stac2-redis:
-        tier: free
-        vendor: redis
+        provider: core  
+        plan: P200
+        label: redis
         version: "2.2"
       stac2-mongo:
-        tier: free
-        vendor: mongodb
+        provider: core  
+        plan: P200
+        label: mongodb
         version: "2.0"
   ./nf:
     name: nf
@@ -51,3 +59,4 @@ applications:
     instances: 16
     runtime: node06
     framework: node
+    plan: P200
