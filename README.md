@@ -290,8 +290,8 @@ for each action is a function of the action. Reading the workloads and the code 
     # there are no arguments or options to this action
     - action: apps
 
-    # the "user_services" action simulates executing the command, "vmc services". It enumerates the services for the current user, or
-    # in v2 mode, for the current user in the selected space.
+    # the "user_services" action simulates executing the command, "vmc services". It enumerates the services for
+    # the current user, or in v2 mode, for the current user in the selected space.
     # there are no arguments or options to this action
     - action: user_services
 
@@ -310,11 +310,11 @@ for each action is a function of the action. Reading the workloads and the code 
     # seconds. This is indicated by the abs argument (absolute/fixed sleep),
     # or max argument for random sleep of up to N seconds. Examples of both forms
     # shown below
-    #
+
     # pause for 4 seconds
     - action: pause
       abs: 4
-    #
+
     # pause for up to 10 seconds
     - action: pause
       max: 10
