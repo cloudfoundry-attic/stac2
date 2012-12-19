@@ -1,3 +1,4 @@
+# Copyright (c) 2009-2013 VMware, Inc.
 # Be sure to restart your server when you modify this file.
 
 Dbrails::Application.config.session_store :cookie_store, :key => '_dbrails_session'

@@ -1,3 +1,4 @@
+# Copyright (c) 2009-2013 VMware, Inc.
 Dbrails::Application.configure do
   # Settings specified here will take precedence over those in config/application.rb
 

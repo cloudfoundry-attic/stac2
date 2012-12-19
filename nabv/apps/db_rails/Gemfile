@@ -1,3 +1,4 @@
+# Copyright (c) 2009-2013 VMware, Inc.
 source 'http://rubygems.org'
 
 gem 'rails', '3.0.5'

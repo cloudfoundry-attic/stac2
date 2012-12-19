@@ -1,3 +1,4 @@
+# Copyright (c) 2009-2013 VMware, Inc.
 # Be sure to restart your server when you modify this file.
 
 # Add new inflection rules using the following format

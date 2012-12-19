@@ -1,3 +1,4 @@
+# Copyright (c) 2009-2013 VMware, Inc.
 Dbrails::Application.routes.draw do
   # The priority is based upon order of creation:
   # first created -> highest priority.

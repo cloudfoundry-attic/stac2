@@ -1,4 +1,4 @@
-# Copyright (c) 2009-2011 VMware, Inc.
+# Copyright (c) 2009-2013 VMware, Inc.
 # note: remember to run bundler package and bundler install
 require 'rubygems'
 require 'bundler/setup'

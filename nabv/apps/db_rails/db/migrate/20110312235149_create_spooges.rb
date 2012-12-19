@@ -1,3 +1,4 @@
+# Copyright (c) 2009-2013 VMware, Inc.
 class CreateSpooges < ActiveRecord::Migration
   def self.up
     create_table :spooges do |t|

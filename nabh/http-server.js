@@ -1,3 +1,4 @@
+// Copyright (c) 2009-2013 VMware, Inc.
 // nab http server
 var http = require("http");
 var url = require("url");

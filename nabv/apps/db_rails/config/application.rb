@@ -1,3 +1,4 @@
+# Copyright (c) 2009-2013 VMware, Inc.
 require File.expand_path('../boot', __FILE__)
 
 require 'rails/all'

@@ -1,3 +1,4 @@
+# Copyright (c) 2009-2013 VMware, Inc.
 # clouds are configured into stac2 by including a cloud config file in the
 # nabv/config/clouds directory. The filename must be {domain}.config.yml
 # for instance, if your cloud serves apps at mycloudfoundry.com, the config

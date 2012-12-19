@@ -1,3 +1,4 @@
+# Copyright (c) 2009-2013 VMware, Inc.
 workloads:
   db_rails:
     display: generic rails DB app

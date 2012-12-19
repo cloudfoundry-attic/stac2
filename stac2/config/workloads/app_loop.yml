@@ -1,3 +1,4 @@
+# Copyright (c) 2009-2013 VMware, Inc.
 workloads:
   app_loop:
     display: simple app creation loop

@@ -1,3 +1,4 @@
+# Copyright (c) 2009-2013 VMware, Inc.
 require 'net/http'
 require 'net/https'
 require 'uri'

@@ -1,3 +1,4 @@
+# Copyright (c) 2009-2013 VMware, Inc.
 class DbController < ApplicationController
   STATUS = ['new', 'approved', 'invited', 'registered', 'prospect']
 

@@ -1,3 +1,4 @@
+# Copyright (c) 2009-2013 VMware, Inc.
 workloads:
   service_lifecycle:
     display: create app, bind service, write data, delete

@@ -1,3 +1,4 @@
+# Copyright (c) 2009-2013 VMware, Inc.
 class MailLib
 
   # initialize mailer settings

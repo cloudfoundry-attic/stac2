@@ -160,6 +160,10 @@ UI on the workload edit page and these go straight into stac2-mongo (and then fr
 
 # Workloads
 
+The default workloads are defined in [stac2/config/workloads](https://github.com/cloudfoundry/stac2/tree/master/stac2/config/workloads). Each workload
+file is a app is not a core piece of stac2. Instead its an extra app that is used by some of the heavy http oriented workloads; specifically, those starting with **xnf_**. The app is created staticaly and because of that,
+
+
 # Clouds
 
 As noted in the introduction section, for your stac2 installation to work correctly, you will need to create a properly formatted and
