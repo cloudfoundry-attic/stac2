@@ -280,10 +280,14 @@ The next intereasting section is "actions". Within this key we have all of the C
 for each action is a function of the action. Reading the workloads and the code should give a clear understanding of the action's schema and options. When in doubt, let
 [vmcworkitem.rb](https://github.com/cloudfoundry/stac2/blob/master/nabv/lib/nabv/vmcworkitem.rb) be your guide, specifically the executeSequence method.
 
+### login
+
     # the "login" action executes a vmc login. The username and password is
     # dynamically assigned using credentials from the cloud config file
     # there are no arguments or options to this action
     - action: login
+
+### apps
 
     # the "apps" action simulates executing the command, "vmc apps". It enumerates the apps for the current user, or
     # in v2 mode, for the current user in the selected space.
