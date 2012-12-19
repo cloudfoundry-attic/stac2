@@ -165,6 +165,7 @@ Using the workload management interface ("edit" link next to workload selector),
 re-established from this page by clicking on the "reset workloads" link.
 
 A workload is designed to mimic the activity of a single developer sitting in front of her machine ready to do a little coding. A typical vmc session might be:
+
     # login and look at your apps/services
     vmc login
     vmc apps
@@ -176,6 +177,147 @@ A workload is designed to mimic the activity of a single developer sitting in fr
     curl http://foo.cloudfoundry.com/foo?arg=100
     curl http://foo.cloudfoundry.com/bar?arg=7
 
+The workload grammar is designed to let you easily express scenarios like this and then use the stac2 framework to execute a few hundred active developers running this scenario non-stop.
+
+In Cloud Foundry, applications and services are named objects and the names are scoped to a user account. This means that within an account, application names must be unique, and service names must be unique.
+With the second generation cloud controller, an additional named object, the "space" object is introduced. Application names and service names must be unqie within a space but multiple users may access and maniupulate
+the objects. In order to reliably support this, stac2 workloads that manipulate named objects tell the system that they are going to use names and the system generates unique names for each workload in action. The workload's
+then refer to these named objects using indirection. E.g.:
+
+    appnames:
+      - please-compute
+      - please-compute
+    ...
+    - action: start_app
+      appname: 0
+
+In the above fragment, the "appnames" defines an array. The value "please-compute" is a signal to the system to generate two unique appnames that will be used by an instance of the running workload.
+Later on, the "start_app" action (an action that roughly simulates vmc start *name-of-app*) specifies via the "appname: 0" key that it wants to use the first generated appname.
+
+The name generation logic is applied to application (via appnames:), services (via servicenames:), and spaces (via spacenames:). A sample fragment using these looks like:
+
+     sys_v2test_with_services:
+       display: v2 playground but with service creation
+       appnames:
+         - please-compute
+
+       servicenames:
+         - please-compute
+         - please-compute
+
+       spacenames:
+         - please-compute
+
+       operations:
+       ...
+
+The value "please-compute" is the key to dynamic name generation. If you recall that the "nf" app is a built in app that's typically used for high http load scenarios, workloads referencing this app still use
+still use the appnames construct, but use static appnames. Note the full workload below that uses the existing nf app. In this workload there is a call to vmc info, and then a loop of two iterations where each iteration
+does 400 http GET's to the nf app's /random-data entrypoint from 4 concurrent clients. At the end of each loop iteration, the scenario waits for all outstanding http operations to complete before moving on.
+
+    xnf_http_1k:
+      display: heavy http load torgetting static nf, 1k transfers
+      appnames:
+        - nf
+
+      operations:
+        - op: loop
+          n: 1
+          operations:
+          - op: sequence
+            actions:
+              - action: info
+        - op: loop
+          n: 2
+          operations:
+            - op: sequence
+              actions:
+                - action: http_operation
+                  appname: 0
+                  path: /random-data?k=1k
+                  n: 400
+                  c: 4
+                - action: http_drain
+
+The other major section in a workload is the "operations" section. This is the meat of a workload containing all of the commands that end up making use of the names.
+The interpretation of the workload is in [vmcworkitem.rb](https://github.com/cloudfoundry/stac2/blob/master/nabv/lib/nabv/vmcworkitem.rb), so let that be your guide
+in addition to the documentation snippets that follow.
+
+The "operations" key contains and array of "op" keys where each "op" is either a sequence of actions, or a loop of nested operations. E.g.:
+
+    # the single element of the following operations key
+    # is a sequence of actions that execute sequentially
+    operations:
+      - op: sequence
+        actions:
+          - action: login
+          - action: info
+
+    # in this operations key we have a loop with an iteration
+    # count of 4. Within the loop there is a nested operations
+    # key and within this we have a simple sequence. of actions
+    # the first action is a variable sleep of up to 4s, the second
+    # is 50 HTTP GET requests
+    operations:
+      - op: loop
+        n: 4
+        operations:
+          - op: sequence
+            actions:
+              - action: pause
+                max: 4
+
+              # 50 requests, 1k each for 50k
+              - action: http_operation
+                appname: 0
+                path: /random-data?k=1k
+                n: 50
+                c: 1
+
+Reading through the default workloads should give you a good understanding of operations, sequences, and loops. All very simple and straightforward constructs.
+
+The next intereasting section is "actions". Within this key we have all of the Cloud Foundry vmc/api operations as well as the simple http application interactions. The schema
+for each action is a function of the action. Reading the workloads and the code should give a clear understanding of the action's schema and options. When in doubt, let
+[vmcworkitem.rb](https://github.com/cloudfoundry/stac2/blob/master/nabv/lib/nabv/vmcworkitem.rb) be your guide, specifically the executeSequence method.
+
+    # the "login" action executes a vmc login. The username and password is
+    # dynamically assigned using credentials from the cloud config file
+    # there are no arguments or options to this action
+    - action: login
+
+    # the "apps" action simulates executing the command, "vmc apps". It enumerates the apps for the current user, or
+    # in v2 mode, for the current user in the selected space.
+    # there are no arguments or options to this action
+    - action: apps
+
+    # the "user_services" action simulates executing the command, "vmc services". It enumerates the services for the current user, or
+    # in v2 mode, for the current user in the selected space.
+    # there are no arguments or options to this action
+    - action: user_services
+
+    # the "system_services" action simulates executing the command, "vmc info --services". It enumerates the services
+    # available in the system
+    # there are no arguments or options to this action
+    - action: system_services
+
+    # the "info" action simulates executing the command, "vmc info", or when not authenticated
+    # executing curl http://#{cc_target}/info
+    # there are no arguments or options to this action
+    - action: info
+
+    # the "pause" action is used to introduce "think time" into a workload
+    # it can either do a fixed sleep of N seconds, or a random sleep of up to N
+    # seconds. This is indicated by the abs argument (absolute/fixed sleep),
+    # or max argument for random sleep of up to N seconds. Examples of both forms
+    # shown below
+    #
+    # pause for 4 seconds
+    - action: pause
+      abs: 4
+    #
+    # pause for up to 10 seconds
+    - action: pause
+      max: 10
 
 
 # Clouds
