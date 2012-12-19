@@ -294,20 +294,28 @@ for each action is a function of the action. Reading the workloads and the code 
     # there are no arguments or options to this action
     - action: apps
 
+### user_services
+
     # the "user_services" action simulates executing the command, "vmc services". It enumerates the services for
     # the current user, or in v2 mode, for the current user in the selected space.
     # there are no arguments or options to this action
     - action: user_services
+
+### system_services
 
     # the "system_services" action simulates executing the command, "vmc info --services". It enumerates the services
     # available in the system
     # there are no arguments or options to this action
     - action: system_services
 
+### info
+
     # the "info" action simulates executing the command, "vmc info", or when not authenticated
     # executing curl http://#{cc_target}/info
     # there are no arguments or options to this action
     - action: info
+
+### pause
 
     # the "pause" action is used to introduce "think time" into a workload
     # it can either do a fixed sleep of N seconds, or a random sleep of up to N
@@ -322,6 +330,79 @@ for each action is a function of the action. Reading the workloads and the code 
     # pause for up to 10 seconds
     - action: pause
       max: 10
+
+### create_app
+
+    # the "create_app" action is used to create an application. The name of the application
+    # comes from the dynamically generated name from the appnames section, and this name
+    # is also used to create the default route to the application. The bits, memory size,
+    # framework/runtime, instance count all come from the built in apps and apps meta data,
+    # all of this is documented in subsequent sections.
+    # an application can be created in the started state or stopped state. The default
+    # is to create the app in the started state, but if the app needs to start
+    # suspended, so that for instance you can bind a required service to it, the
+    # "suspended" argument can be used.
+
+    # create an instance of the "foo" app in the started state
+    # using the first appname in the list of generated appnames
+    - action: create_app
+      app: foo
+      appname: 0
+
+
+    # create an instance of the "db_rails" app in the suspended state
+    # using the first appname in the list of generated appnames
+    - action: create_app
+      app: db_rails
+      appname: 0
+      suspended: true
+
+### start_app
+
+    # the "start_app" action is used to start an app. Normally this action is used
+    # after creating an app in the stopped state and binding any services
+    # required by the app. The app to be started is passed to the action using the
+    # appname argument. This supplies the index into the appnames array. E.g., to
+    # start the first app in the list, use "appname: 0"
+    - action: start_app
+      appname: 0
+
+### stop_app
+
+    # the "stop_app" action is used to stop an app. The app to be stopped is passed to the action using the
+    # appname argument.
+    - action: stop_app
+      appname: 0
+
+### update_app
+
+    # the "update_app" action is used to simulate updating the apps bits after a minor code edit. Note, this
+    # action is coded in a way that it doesn't realy change an apps bits. Instead it takes advantage of
+    # internal knowledge that even without changes, as long as the resources of an app are small enough
+    # they will always be uploaded and re-staged. If this behavior changes, some additional code needs
+    # to be added to the implementation to pro-actively dirty the app.
+    # The bits for the app are specified using the app key, the same key used during app creation.
+    # The app to be updated is specified using the appname argument. The app is always stopped
+    # prior to the update. It is started after the update, BUT is "suspended" key is present using the
+    # same form as in create_app, the updated app will be left in a stopped state.
+    - action: update_app
+      app: db_rails
+      appname: 0
+
+### delete_app
+
+    # the "delete_app" action is used to delete an app and remove and delete all routes
+    # that point to the app.
+    - action: delete_app
+      appname: 0
+
+### app_info
+
+    # the "app_info" action is used to retrieve the appinfo and stats for each of the app's instances. Very similar
+    # to the "vmc stats" command.
+    - action: app_info
+      appname: 0
+
 
 
 # Clouds
