@@ -160,8 +160,22 @@ UI on the workload edit page and these go straight into stac2-mongo (and then fr
 
 # Workloads
 
-The default workloads are defined in [stac2/config/workloads](https://github.com/cloudfoundry/stac2/tree/master/stac2/config/workloads). Each workload
-file is a app is not a core piece of stac2. Instead its an extra app that is used by some of the heavy http oriented workloads; specifically, those starting with **xnf_**. The app is created staticaly and because of that,
+The default workloads are defined in [stac2/config/workloads](https://github.com/cloudfoundry/stac2/tree/master/stac2/config/workloads). Each workload file is a yaml file containing one or more named workloads.
+Using the workload management interface ("edit" link next to workload selector), workload files and all associated workloads may be deleted or added to the system. The default set of workloads can also be
+re-established from this page by clicking on the "reset workloads" link.
+
+A workload is designed to mimic the activity of a single developer sitting in front of her machine ready to do a little coding. A typical vmc session might be:
+    # login and look at your apps/services
+    vmc login
+    vmc apps
+    vmc services
+
+    # edit some code and push your app
+    # curl an entrypoint or two
+    vmc push foo
+    curl http://foo.cloudfoundry.com/foo?arg=100
+    curl http://foo.cloudfoundry.com/bar?arg=7
+
 
 
 # Clouds
