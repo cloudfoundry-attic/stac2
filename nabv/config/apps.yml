@@ -29,6 +29,13 @@ apps:
     runtime: ruby19
     framework: rails3
 
+  springtravel:
+    path: apps/springtravel
+    memory: 256
+    instances: 1
+    runtime: java
+    framework: spring
+
   crashonboot:
     path: apps/crashonboot
     memory: 64

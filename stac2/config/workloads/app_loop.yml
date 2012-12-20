@@ -1,14 +1,13 @@
 # Copyright (c) 2009-2013 VMware, Inc.
 workloads:
-  app_loop:
-    display: simple app creation loop
+  app_loop_ruby:
+    display: create and update rails and sinatra apps
 
     appnames:
       - please-compute
       - please-compute
 
     servicenames:
-      - please-compute
       - please-compute
 
     operations:
@@ -36,6 +35,11 @@ workloads:
             service: mysql
             plan: P200
             servicename: 0
+          - action: user_services
+          - action: pause
+            abs: 1
+          - action: pause
+            max: 10
           - action: bind_service
             appname: 1
             servicename: 0
@@ -62,3 +66,40 @@ workloads:
           - action: delete_service
             servicename: 0
 
+  app_loop_spring:
+    display: create and update a spring app
+
+    appnames:
+      - please-compute
+
+    operations:
+      # login, get situated, run vmc apps and services
+      - op: sequence
+        actions:
+          - action: login
+          - action: info
+
+      # create a simple app
+      - op: sequence
+        actions:
+          - action: create_app
+            app: travelapp
+            appname: 0
+
+      # perform a few updates
+      - op: loop
+        n: 8
+        operations:
+          - op: sequence
+            actions:
+              - action: update_app
+                app: travelapp
+                appname: 0
+              - action: pause
+                max: 4
+
+      # delete the app
+      - op: sequence
+        actions:
+          - action: delete_app
+            appname: 0

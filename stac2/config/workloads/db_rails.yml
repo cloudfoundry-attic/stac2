@@ -28,6 +28,11 @@ workloads:
             service: mysql
             plan: P200
             servicename: 0
+          - action: user_services
+          - action: pause
+            abs: 1
+          - action: pause
+            max: 10
           - action: bind_service
             appname: 0
             servicename: 0

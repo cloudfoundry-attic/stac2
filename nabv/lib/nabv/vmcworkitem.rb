@@ -798,7 +798,9 @@ class VmcWorkItem
         rv[:response_status] = response.status
         attempts = attempts + 1
         if response.status.to_i >= 400
+          # on a failed call, sleep for a second before the retry
           failure = true
+          sleep(1) if attempts < 4
         else
           failure = false
         end
