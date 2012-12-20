@@ -18,7 +18,7 @@ Installing/running Stac2 on your Cloud Foundry instance requires a small amount 
     * nabv should be sized to closely match the concurrency setting in your cloud config. It should be a little over half your desired concurrecny.
     for a large production cloud with a cmax of 192 set the instance count of nabv to ~100 (vmc scale nabv --instances 100)
     * nabh should be between 16 and 32, depending on how hot of an http load you plan to run, at 32 you can easily overwhelm a small router pool with so a rule of thumb would be to start with 16 for must mid-sized (100+ dea clouds), 32 for 250+ dea clouds, and4-8 for very small clouds
-    * nf should be set large IFF you plan on running the high thruput xnf_ loads. Tun run 30,000 http requests per second run between 75 and 100 instances of nf
+    * nf should be set large IFF you plan on running the high thru-put xnf_ loads. Tun run 30,000 http requests per second run between 75 and 100 instances of nf
     * stac2 is a single instance app so leave it at 1
 
 Once stac2 is running and configured correctly, since this is the first time its been run, you need to populate it with some workloads. The static
@@ -180,7 +180,7 @@ A workload is designed to mimic the activity of a single developer sitting in fr
 The workload grammar is designed to let you easily express scenarios like this and then use the stac2 framework to execute a few hundred active developers running this scenario non-stop.
 
 In Cloud Foundry, applications and services are named objects and the names are scoped to a user account. This means that within an account, application names must be unique, and service names must be unique.
-With the second generation cloud controller, an additional named object, the "space" object is introduced. Application names and service names must be unqie within a space but multiple users may access and maniupulate
+With the second generation cloud controller, an additional named object, the "space" object is introduced. Application names and service names must be unqie within a space but multiple users may access and manipulate
 the objects. In order to reliably support this, stac2 workloads that manipulate named objects tell the system that they are going to use names and the system generates unique names for each workload in action. The workload's
 then refer to these named objects using indirection. E.g.:
 
@@ -216,7 +216,7 @@ still use the appnames construct, but use static appnames. Note the full workloa
 does 400 http GET's to the nf app's /random-data entrypoint from 4 concurrent clients. At the end of each loop iteration, the scenario waits for all outstanding http operations to complete before moving on.
 
     xnf_http_1k:
-      display: heavy http load torgetting static nf, 1k transfers
+      display: heavy http load targeting static nf, 1k transfers
       appnames:
         - nf
 
@@ -276,7 +276,7 @@ The "operations" key contains and array of "op" keys where each "op" is either a
 
 Reading through the default workloads should give you a good understanding of operations, sequences, and loops. All very simple and straightforward constructs.
 
-The next intereasting section is "actions". Within this key we have all of the Cloud Foundry vmc/api operations as well as the simple http application interactions. The schema
+The next interesting section is "actions". Within this key we have all of the Cloud Foundry vmc/api operations as well as the simple http application interactions. The schema
 for each action is a function of the action. Reading the workloads and the code should give a clear understanding of the action's schema and options. When in doubt, let
 [vmcworkitem.rb](https://github.com/cloudfoundry/stac2/blob/master/nabv/lib/nabv/vmcworkitem.rb) be your guide, specifically the executeSequence method.
 
@@ -377,7 +377,7 @@ for each action is a function of the action. Reading the workloads and the code 
 ### update_app
 
     # the "update_app" action is used to simulate updating the apps bits after a minor code edit. Note, this
-    # action is coded in a way that it doesn't realy change an apps bits. Instead it takes advantage of
+    # action is coded in a way that it doesn't really change an apps bits. Instead it takes advantage of
     # internal knowledge that even without changes, as long as the resources of an app are small enough
     # they will always be uploaded and re-staged. If this behavior changes, some additional code needs
     # to be added to the implementation to pro-actively dirty the app.
@@ -406,7 +406,7 @@ for each action is a function of the action. Reading the workloads and the code 
 ### create_service
 
     # the "create_service" action is used to create a named service instance.
-    # On v1 systems, servie creation is supported for redis, mysql, and postgresql services.
+    # On v1 systems, service creation is supported for redis, mysql, and postgresql services.
     # Adding the others is straightforward, but requires a small code change to include the static manifest map
     # used to drive cfoundry. On v2 systems, service creation is allows service offerings to be selected
     # by plan-name (d100, p200, etc.) and label. The core and version attributes are not supported as selectors.
@@ -470,11 +470,11 @@ for each action is a function of the action. Reading the workloads and the code 
     # writing some more code...
     #
     # When used in synchronous mode, a single request is made directly from the nabv component, the worker
-    # executing the request stalls until it recieves a response. On response status >= 400, it will retry
+    # executing the request stalls until it receives a response. On response status >= 400, it will retry
     # the http_operation up to four times with a sleep of 1s between each operation. This mode is mainly
     # used by stac to launch an application and then do something like initialize a database. The db_rails
-    # scenario is an example of this usage. Note that synchronous mode is requested by suppliying the synchronous
-    # key. In addition that path is supplied, and the appname is used to determing the route to the app, with
+    # scenario is an example of this usage. Note that synchronous mode is requested by supplying the synchronous
+    # key. In addition that path is supplied, and the appname is used to determine the route to the app, with
     # the specific path appended.
     - action: http_operation
       appname: 0
@@ -491,7 +491,7 @@ for each action is a function of the action. Reading the workloads and the code 
       c: 4
 
     # depending on your configuration, you might need to run a test where you isolate Cloud Foundry from your
-    # loadbalancing and firewall infrastructure and directly target your routers. The xnf_ workloads are perfect
+    # load balancing and firewall infrastructure and directly target your routers. The xnf_ workloads are perfect
     # for this use case. The "useip" key may be used to target the routers directly. When used in this mode,
     # stac2 (actually the nabh component) will act as a poor-mans load balancer and send requests to the pool
     # of ip's listed in the useip key. The Host header is then used to route to the desired application.
@@ -514,8 +514,8 @@ for each action is a function of the action. Reading the workloads and the code 
 
 As noted in the introduction section, for your stac2 installation to work correctly, you will need to create a properly formatted and
 completely specified cloud configuration file that represents your cloud. There is a fully documented [sample config](https://github.com/cloudfoundry/stac2/blob/master/nabv/config/clouds/sample-config.yml)
-in nabv/config/clouds so when creating yours, model it off of this config file. For v1 clouds, it's a very simple excercise. The most
-complex part is creating a pool of users that stac will use when running the workloads. Use vmc register for this and you will be fine.
+in nabv/config/clouds so when creating yours, model it off of this config file. For v1 clouds, it's a very simple exercise. The most
+complex part is creating a pool of users that stac2 will use when running the workloads. Use vmc register for this and you will be fine.
 
 # Apps
 
@@ -527,19 +527,19 @@ database and then once initialized, entrypoints exist to query, update, insert, 
 uses this app.
 
 * **foo** - It doesn't get too much simpler than this. A simple sinatra app that requires no services. The sys_basic*
-scenarios and several others use this app to excercise app creation, etc. The variations that also generate CPU load
+scenarios and several others use this app to exercise app creation, etc. The variations that also generate CPU load
 (sys_basic_http_cpu) use this app as well and in this case use the /fib entrypoint to launch threads to burn CPU cycles
-computing fibinocci sequences.
+computing Fibonacci sequences.
 
 * **nf** - This is identical to the static node.JS based nf app, but in this case, as a source based app it may be launched
 dynamically by stac2. The sys_http scenario makes use of this app.
 
-* **springtravel** - This is a relatively large spring WAR file based Java app. Given it's sice and startup complexity
+* **springtravel** - This is a relatively large spring WAR file based Java app. Given it's size and startup complexity
 it's taxing on the staging system and related caching and storage infrastructure. The app_loop_spring scenario makes
 use of this app.
 
 * **crashonboot** - This app is a variation of the ruby foo app with a syntax error that causes it to crash on startup.
-Perfect app for excercising the flappign infrastructure. The app_loop_crash scenario makes use of this app.
+Perfect app for exercising the flapping infrastructure. The app_loop_crash scenario makes use of this app.
 
 When a workload references an application, it does it by name. The name is really the key to an application
 manifest stored in [apps.yml](https://github.com/cloudfoundry/stac2/blob/master/nabv/config/apps.yml). Note the
