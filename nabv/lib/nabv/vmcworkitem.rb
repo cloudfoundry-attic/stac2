@@ -84,8 +84,9 @@ class VmcWorkItem
         if delete_flag
           apps.each do |theapp|
             $log.info("enumApps: deleting app: #{theapp.name}, #{u['name']}")
-            theapp.delete! if theapp.name.include? "appname-"
-            theapp.delete! if theapp.name.include? "caldecott"
+            if theapp.name.include?("appname-") || theapp.name.include?("caldecott")
+              theapp.delete!
+            end
           end
         end
       end
@@ -212,8 +213,9 @@ class VmcWorkItem
               end
             end
             $log.info("rundown: deleting app #{app} for #{@user}")
-            theapp.delete! if app.include? "appname-"
-            theapp.delete! if app.include? "caldecott"
+            if app.include?("appname-") || app.include?("caldecott")
+              theapp.delete!
+            end
           end
         end
       end

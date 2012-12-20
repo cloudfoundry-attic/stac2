@@ -83,20 +83,15 @@ workloads:
       - op: sequence
         actions:
           - action: create_app
-            app: travelapp
+            app: springtravel
             appname: 0
-
-      # perform a few updates
-      - op: loop
-        n: 8
-        operations:
-          - op: sequence
-            actions:
-              - action: update_app
-                app: travelapp
-                appname: 0
-              - action: pause
-                max: 4
+          - action: pause
+            abs: 1
+          - action: pause
+            max: 4
+          - action: update_app
+            app: springtravel
+            appname: 0
 
       # delete the app
       - op: sequence
