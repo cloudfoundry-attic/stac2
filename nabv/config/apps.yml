@@ -41,3 +41,4 @@ apps:
     memory: 64
     instances: 1
     runtime: ruby18
+    framework: sinatra

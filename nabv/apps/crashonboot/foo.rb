@@ -2,8 +2,16 @@
 require 'rubygems'
 require 'sinatra'
 
-# note the typo
-host = XENV['VCAP_APP_HOST']
+configure do
+  puts "Help!"
+  sleep 1
+  warn "No, really help me!"
+
+  # note the typo
+  host = XENV['VCAP_APP_HOST']
+  exit
+end
+
 
 get '/' do
   port = ENV['VCAP_APP_PORT']

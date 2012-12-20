@@ -98,3 +98,48 @@ workloads:
         actions:
           - action: delete_app
             appname: 0
+
+  app_loop_crash:
+    display: create an app that crashes on boot.create and update a spring app
+
+    appnames:
+      - please-compute
+
+    operations:
+      # login, get situated, run vmc apps and services
+      - op: sequence
+        actions:
+          - action: login
+          - action: info
+
+      # create a simple app
+      - op: sequence
+        actions:
+          - action: create_app
+            app: crashonboot
+            appname: 0
+          - action: pause
+            abs: 1
+          - action: pause
+            max: 4
+
+      # start/stop a bit
+      - op: loop
+        n: 4
+        operations:
+          - op: sequence
+            actions:
+              - action: stop_app
+                appname: 0
+              - action: start_app
+                appname: 0
+              - action: pause
+                abs: 1
+              - action: pause
+                max: 4
+
+      # delete the app
+      - op: sequence
+        actions:
+          - action: delete_app
+            appname: 0

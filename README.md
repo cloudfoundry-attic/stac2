@@ -466,7 +466,42 @@ for each action is a function of the action. Reading the workloads and the code 
     # a batch of asynchronous HTTP GET operations. Note, if additional verbs are needed in the future,
     # it's just code... The purpose of this action is to simply complement the main API operations and
     # let a workload generate some http traffic to the apps. Stac2 itself is not meant to be an full service
-    # http load generation/benchmarking tool so this action has some limitations in its current implementation.
+    # http load generation/benchmarking tool so this action has some limitations, easily overcome by
+    # writing some more code...
+    #
+    # When used in synchronous mode, a single request is made directly from the nabv component, the worker
+    # executing the request stalls until it recieves a response. On response status >= 400, it will retry
+    # the http_operation up to four times with a sleep of 1s between each operation. This mode is mainly
+    # used by stac to launch an application and then do something like initialize a database. The db_rails
+    # scenario is an example of this usage. Note that synchronous mode is requested by suppliying the synchronous
+    # key. In addition that path is supplied, and the appname is used to determing the route to the app, with
+    # the specific path appended.
+    - action: http_operation
+      appname: 0
+      path: /db/init?n=250
+      synchronous: true
+
+    # To trigger asynchronous mode, do not supply the synchronous key. In this mode, the number of requests and
+    # desired concurrency must be supplied (via n and c). For example, the following snippet shows an asynchronous
+    # request for 1000 operations from 4 concurrent clients.
+    - action: http_operation
+      appname: 0
+      path: /fast-echo
+      n: 1000
+      c: 4
+
+    # depending on your configuration, you might need to run a test where you isolate Cloud Foundry from your
+    # loadbalancing and firewall infrastructure and directly target your routers. The xnf_ workloads are perfect
+    # for this use case. The "useip" key may be used to target the routers directly. When used in this mode,
+    # stac2 (actually the nabh component) will act as a poor-mans load balancer and send requests to the pool
+    # of ip's listed in the useip key. The Host header is then used to route to the desired application.
+    # the following snippet demonstrates the use of useip to target your Cloud Foundry routers directly
+    - action: http_operation
+      appname: 0
+      path: /fast-echo
+      n: 1000
+      c: 4
+      useip: 172.30.40.216,172.30.40.217,172.30.40.218,172.30.40.219
 
 
 ### http_drain
@@ -474,8 +509,6 @@ for each action is a function of the action. Reading the workloads and the code 
     # the "http_drain" action is used to stall a scenario and wait for all outstanding asynchronous
     # http operations to complete or timeout.
     - action: http_drain
-
-
 
 # Clouds
 
@@ -485,7 +518,55 @@ in nabv/config/clouds so when creating yours, model it off of this config file. 
 complex part is creating a pool of users that stac will use when running the workloads. Use vmc register for this and you will be fine.
 
 # Apps
-todo(markl): complete this section
+
+The applications available for use in stac2 workloads are pushed as part of the dataset of the nabv application.
+The [nabv/apps](https://github.com/cloudfoundry/stac2/tree/master/nabv/apps) directory contains all of the raw code
+for the apps. There are currently 5 apps:
+* **db_rails** - this is a simple rails app meant to be used with mysql. It exposes an entrypoint to initialize it's
+database and then once initialized, entrypoints exist to query, update, insert, and delete records. The db_rails scenario
+uses this app.
+
+* **foo** - It doesn't get too much simpler than this. A simple sinatra app that requires no services. The sys_basic*
+scenarios and several others use this app to excercise app creation, etc. The variations that also generate CPU load
+(sys_basic_http_cpu) use this app as well and in this case use the /fib entrypoint to launch threads to burn CPU cycles
+computing fibinocci sequences.
+
+* **nf** - This is identical to the static node.JS based nf app, but in this case, as a source based app it may be launched
+dynamically by stac2. The sys_http scenario makes use of this app.
+
+* **springtravel** - This is a relatively large spring WAR file based Java app. Given it's sice and startup complexity
+it's taxing on the staging system and related caching and storage infrastructure. The app_loop_spring scenario makes
+use of this app.
+
+* **crashonboot** - This app is a variation of the ruby foo app with a syntax error that causes it to crash on startup.
+Perfect app for excercising the flappign infrastructure. The app_loop_crash scenario makes use of this app.
+
+When a workload references an application, it does it by name. The name is really the key to an application
+manifest stored in [apps.yml](https://github.com/cloudfoundry/stac2/blob/master/nabv/config/apps.yml). Note the
+snippet below showing that each app is defined in terms of the path to it's bits, the memory and instance
+requirements, and the runtime and framework required by the app.
+
+    apps:
+      nf:
+        path: apps/nf
+        memory: 64
+        instances: 4
+        runtime: node06
+        framework: node
+
+      db_rails:
+        path: apps/db_rails
+        memory: 256
+        instances: 1
+        runtime: ruby19
+        framework: rails3
+
+      springtravel:
+        path: apps/springtravel
+        memory: 256
+        instances: 1
+        runtime: java
+        framework: spring
 
 # Trivia
 
