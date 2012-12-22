@@ -111,6 +111,8 @@ workloads:
         actions:
           - action: delete_app
             appname: 0
+          - action: delete_service
+            servicename: 0
 
   app_loop_spring:
     display: create and update a spring app
