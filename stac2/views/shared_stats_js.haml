@@ -244,7 +244,9 @@
       var dirty_apps = 0;
       var dirty_users = 0;
       var dirty_services = 0;
+      var dirty_spaces = 0;
 
+      dirty_spaces = s['user:stats_summary']['total_spaces_count']
       dirty_services = s['user:stats_summary']['total_services_count']
       dirty_apps = s['user:stats_summary']['total_app_count']
       dirty_users = s['user:stats_summary']['users_with_apps'] + s['user:stats_summary']['users_with_services']
@@ -253,6 +255,7 @@
       set_newvalue(dirty_users, "#dirty_users");
       set_newvalue(dirty_apps, "#dirty_apps");
       set_newvalue(dirty_services, "#dirty_services");
+      set_newvalue(dirty_spaces, "#dirty_spaces");
     }
   }
 

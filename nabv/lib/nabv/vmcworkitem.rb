@@ -45,7 +45,8 @@ class VmcWorkItem
   end
 
   def enumApps(delete_flag)
-    # todo(markl): port to v2
+    $log.debug("ea(0): called with true") if delete_flag == true
+    $log.debug("ea(0): called with !true") if delete_flag != true
     @cfclient = CFoundry::Client.new(@target)
     # enumerate the cloud's user array, validate the login, enum the apps
     users = @cloud['users']
@@ -55,10 +56,12 @@ class VmcWorkItem
     users_with_apps = 0
     users_with_services = 0
     total_app_count = 0
+    total_spaces_count = 0
     total_services_count = 0
     users.each do |u|
       $log.debug "ea(u): #{u.pretty_inspect}"
       status = @cfclient.login({:username => u['name'], :password => u['password']})
+      login_extras
       key = u['name']
       v = {'name'=>u['name']}
 
@@ -66,37 +69,61 @@ class VmcWorkItem
       apps = @cfclient.apps
       services = @cfclient.service_instances
 
-      if services && services.length > 0
-        users_with_services += 1
-        total_services_count += services.length
-        if delete_flag
-          services.each do |theservice|
-            $log.info("enumApps: deleting service: #{theservice.name}, #{u['name']}")
-            theservice.delete! if theservice.name.include? "servicename-"
-          end
-        end
-      end
-
+      # apps (and v2 routes)
       if apps && apps.length > 0
         users_with_apps += 1
         total_app_count += apps.length
         v['apps'] = apps
-        if delete_flag
-          apps.each do |theapp|
-            $log.info("enumApps: deleting app: #{theapp.name}, #{u['name']}")
-            if theapp.name.include?("appname-") || theapp.name.include?("caldecott")
-              theapp.delete!
+        apps.each do |theapp|
+          $log.info("ea(1): deleting app: #{theapp.name}, #{u['name']}")
+          if theapp.name.include?("appname-") || theapp.name.include?("caldecott")
+            if @cloudmode == :v2
+              theapp.routes.each do |r|
+                $log.info("ea(2): deleting route #{r.host}, #{r.pretty_inspect}")
+                theapp.remove_route(r) if delete_flag == true
+                r.delete! if delete_flag == true
+              end
+            end
+            theapp.delete! if delete_flag == true
+          end
+        end
+      end
+
+      # services
+      if services && services.length > 0
+        users_with_services += 1
+        total_services_count += services.length
+        services.each do |theservice|
+          if theservice.name.include? "servicename-"
+            $log.info("ea(3): deleting service: #{theservice.name}, #{u['name']}")
+            theservice.delete! if delete_flag == true
+          end
+        end
+      end
+
+      # spaces
+      if @cloudmode == :v2
+        spaces = @cfclient.spaces
+        if spaces and spaces.length > 0
+          spaces.each do |thespace|
+            $log.debug("ea(4): space: #{thespace.name} found")
+            if thespace.name.include?("spacename-")
+              $log.info("ea(5): deleting stac2 generated space: #{thespace.name}")
+              total_spaces_count = total_spaces_count + 1
+              thespace.delete! if delete_flag == true
             end
           end
         end
       end
     end
+
     rv['user:stats_summary'] = {'users_with_apps' => users_with_apps,
                                 'total_app_count' => total_app_count,
                                 'users_with_services' => users_with_services,
-                                'total_services_count' => total_services_count}
+                                'total_services_count' => total_services_count,
+                                'total_spaces_count' => total_spaces_count}
 
-    $log.debug "ea(rv): #{rv.pretty_inspect}"
+    $log.info "ea(rv): #{rv.pretty_inspect}"
     rv
   end
 
@@ -194,8 +221,6 @@ class VmcWorkItem
   # or service listed in the servicenames or appnames section of the
   # workitem
   def rundown
-    #return
-    #return if @fatal_abort == false
     begin
       @cfclient.login({:username => @user, :password => @password})
       login_extras
@@ -505,6 +530,9 @@ class VmcWorkItem
           # http_drain
           when 'http_drain'
             http_rv = doHttpDrain(a)
+
+          when 'abort'
+            raise "abort action"
 
           else
             # let people x-out actions with no worries

@@ -48,6 +48,54 @@ workloads:
           - action: delete_service
             servicename: 0
 
+  app_loop_ruby_sinatra:
+    display: create and update a small sinatra app
+
+    appnames:
+      - please-compute
+    servicenames:
+      - please-compute
+
+    operations:
+      # login, get situated, run vmc apps and services
+      - op: sequence
+        actions:
+          - action: login
+          - action: info
+
+      # create a simple app
+      - op: sequence
+        actions:
+          - action: create_app
+            app: foo
+            appname: 0
+            suspended: true
+          - action: create_service
+            service: mysql
+            plan: P200
+            servicename: 0
+          - action: user_services
+          - action: pause
+            abs: 1
+          - action: pause
+            max: 4
+          - action: bind_service
+            appname: 0
+            servicename: 0
+          - action: start_app
+            appname: 0
+          - action: update_app
+            app: foo
+            appname: 0
+
+      # delete the app
+      - op: sequence
+        actions:
+          - action: delete_app
+            appname: 0
+          - action: delete_service
+            servicename: 0
+
   app_loop_spring:
     display: create and update a spring app
 

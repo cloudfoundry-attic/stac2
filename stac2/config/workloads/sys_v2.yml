@@ -27,6 +27,62 @@ workloads:
           - action: delete_space
             spacename: 0
 
+  sys_v2test_with_abort:
+    display: v2 playground but with service creation
+    appnames:
+      - please-compute
+
+    servicenames:
+      - please-compute
+      - please-compute
+
+    spacenames:
+      - please-compute
+
+    operations:
+      - op: sequence
+        actions:
+          - action: info
+          - action: login
+          - action: apps
+
+      # app manipulation
+      - op: sequence
+        actions:
+          - action: create_space
+            spacename: 0
+          - action: create_app
+            app: foo
+            appname: 0
+            suspended: true
+          - action: create_service
+            service: mysql
+            servicename: 0
+          - action: create_service
+            service: mysql
+            plan: P200
+            servicename: 1
+          - action: bind_service
+            appname: 0
+            servicename: 0
+          - action: bind_service
+            appname: 0
+            servicename: 1
+          - action: start_app
+            appname: 0
+
+          - action: apps
+          - action: abort
+
+          - action: delete_app
+            appname: 0
+          - action: delete_service
+            servicename: 0
+          - action: delete_service
+            servicename: 1
+          - action: delete_space
+            spacename: 0
+
   sys_v2test_with_services:
     display: v2 playground but with service creation
     appnames:

@@ -21,6 +21,7 @@ $log = Logger.new(STDOUT)
 #$log.level = Logger::DEBUG
 $log.level = Logger::INFO
 #$log.level = Logger::WARN
+STDOUT.sync = true
 
 $vcap_services = JSON.parse(ENV['VCAP_SERVICES']) if ENV['VCAP_SERVICES']
 $vcap_app = JSON.parse(ENV['VCAP_APPLICATION']) if ENV['VCAP_APPLICATION']
@@ -279,9 +280,11 @@ get '/' do
 end
 
 get '/cleanall' do
+  halt 400 if !params[:cloud]
   cmd = {}
+  cmd['cloud'] = params[:cloud]
   workitem = VmcWorkItem.new(cmd, $redis_t3, $apps, "#{$active_worker_id}::000")
-  rv = workitem.enumApps(:true)
+  rv = workitem.enumApps(true)
   rv.to_json
 end
 
