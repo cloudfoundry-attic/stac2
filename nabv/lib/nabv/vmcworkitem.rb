@@ -519,8 +519,9 @@ class VmcWorkItem
           when 'delete_space'
             if @cloudmode == :v2
               thespace = @cfclient.space_by_name(@t['spacenames'][a['spacename']])
-              thespace.delete!
-              raise "failure(0) executing action: #{action_name}" if thespace.exists?
+              $log.debug("ds(1a): thespace, name: #{thespace.name}") if thespace
+              $log.debug("ds(1b): thespace not found") if !thespace
+              thespace.delete! if thespace
             end
 
           # http
