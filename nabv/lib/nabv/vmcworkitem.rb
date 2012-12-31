@@ -196,23 +196,25 @@ class VmcWorkItem
   # this means first establishing context with a target, then login
   # then recursively exec the various operations (sequence, or loop)
   def execute
-    log_instance :add, @cloud['shortname']
-    @cmd['n'].times do
-      @cfclient = CFoundry::Client.new(@target)
-      @cfclient.log = []
-      #@cfclient.trace = true
+    if continueWorking?
+      log_instance :add, @cloud['shortname']
+      @cmd['n'].times do
+        @cfclient = CFoundry::Client.new(@target)
+        @cfclient.log = []
+        #@cfclient.trace = true
 
-      # now whip through the workload and execute the loops and sequences
-      ops = @t['operations']
-      executeOps ops
-      if @cmd['n'] > 1
-        if !continueWorking? || @fatal_abort
-          log_instance :remove, @cloud['shortname']
-          return
+        # now whip through the workload and execute the loops and sequences
+        ops = @t['operations']
+        executeOps ops
+        if @cmd['n'] > 1
+          if !continueWorking? || @fatal_abort
+            log_instance :remove, @cloud['shortname']
+            return
+          end
         end
       end
+      log_instance :remove, @cloud['shortname']
     end
-    log_instance :remove, @cloud['shortname']
   end
 
   # rundown a workitem and clean

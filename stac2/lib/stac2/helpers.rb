@@ -346,7 +346,21 @@ helpers do
       halt response.status, 'nabv is not running' if response.status != 200
       $cloudsandworkloads = JSON.parse(response.body)
       $log.debug("cwl-loaded: #{$cloudsandworkloads.pretty_inspect}")
+
+      default_cloud_name = $cloudsandworkloads['default_cloud']
+      $default_cloud = $cloudsandworkloads['clouds'][default_cloud_name]
+      $log.debug("cwl-default_cloud_set: #{$default_cloud.pretty_inspect}")
     end
+  end
+
+  # compute ui_size based on default cloud's cmax
+  def compute_ui_size
+    cmax = $default_cloud['cmax']
+    ui_size = 4
+    ui_size = 2 if cmax <= 48
+    ui_size = 4 if cmax > 48 && cmax <= 96
+    ui_size = 8 if cmax > 96
+    return ui_size
   end
 
   # -------------------------- OLD FROM AS ----------------------------

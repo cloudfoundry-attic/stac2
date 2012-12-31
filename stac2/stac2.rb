@@ -15,14 +15,6 @@ require 'httpclient'
 require 'pony'
 require 'mongo'
 
-# staging and shard should double size the ui
-$base_ui = 4
-$large_ui = 8
-$ui_table = {
-    'cf01.qa.las01.vcsops.com' => $large_ui,
-    'cf01.las2.us1.vcsops.com' => $large_ui
-}
-
 begin
   $log = Logger.new(STDOUT)
   #$log.level = Logger::DEBUG
@@ -152,10 +144,7 @@ end
 get '/' do
   headers['Cache-Control'] = 'no-store'
   load_clouds_and_workloads
-  $ui_size = $base_ui
-  if $ui_table[$stac2_base_domain]
-    $ui_size = $ui_table[$stac2_base_domain]
-  end
+  $ui_size = compute_ui_size
   $lights = 24 * $ui_size
   $log.debug("rendering with ui_size of #{$ui_size}")
   haml :index
