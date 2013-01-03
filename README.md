@@ -4,7 +4,6 @@ Stac2 is a load generation system for Cloud Foundry. The system is made up for s
 count of some of the applications gates the amount of load that can be generated and depending on the size and complexity of your system,
 you will have to size these to your Cloud Foundry instance using the "vmc scale --instances" command.
 
-
 Installing/running Stac2 on your Cloud Foundry instance requires a small amount of configuration and setup.
 
 * clone the stac2 repo "git clone git@github.com:cloudfoundry/stac2.git"
@@ -40,8 +39,6 @@ cloud with reasonable stac2 concurrency seeing ~1,000 CC API calls per second (t
 
 If you see no activty, then click on the reset button above the load light grid and try again. Worst case, restart nabh, then nabv,
 hit the reset button, and then restart.
-
-
 
 # Stac2 Display and Controls
 
@@ -567,6 +564,10 @@ requirements, and the runtime and framework required by the app.
         instances: 1
         runtime: java
         framework: spring
+
+# Administrivia
+
+Note: this repo is managed via classic GitHub pull requests, not front ended by Jenkins.
 
 # Trivia
 
