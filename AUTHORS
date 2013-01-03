@@ -1,0 +1,11 @@
+#  Authors
+# =========
+#
+# This is the list of people that have committed code to the STAC2 project.
+# The list is just ordered by first name here, but the file is
+# (and should be kept) YAML-formatted.
+#
+# Please feel free to add any personal details.
+
+---
+- Mark Lucovsky             { email: markl@vmware.com }
