@@ -567,7 +567,7 @@ requirements, and the runtime and framework required by the app.
 
 # Administrivia
 
-Note: this repo is managed via classic GitHub pull requests, not front ended by Jenkins.
+Note: this repo is managed via classic GitHub pull requests, not front ended by Gerrit.
 
 # Trivia
 
