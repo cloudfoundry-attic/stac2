@@ -14,9 +14,12 @@ Installing/running Stac2 on your Cloud Foundry instance requires a small amount 
 * from the stac2 repo root, where the manifest.yml file is run vmc push (note, you must have vmc 0.4.7 or higher, cfoundry 0.4.10 or higher, and manifests-vmc-plugin 0.4.17 or higher for the push to succeed)
 * note: the manifest is identical between v2 and v1 systems, v2 properties are transformed into v1 properties or ignored, depending on the property.
 * based on the size of your cloud and desired concurrency you will need to adjust the instance counts of nabv, nabh, and nf
-    * nabv should be sized to closely match the concurrency setting in your cloud config. It should be a little over half your desired concurrecny.
-    for a large production cloud with a cmax of 192 set the instance count of nabv to ~100 (vmc scale nabv --instances 100)
-    * nabh should be between 16 and 32, depending on how hot of an http load you plan to run, at 32 you can easily overwhelm a small router pool with so a rule of thumb would be to start with 16 for must mid-sized (100+ dea clouds), 32 for 250+ dea clouds, and4-8 for very small clouds
+    * nabv should be sized to closely match the concurrency setting in your cloud config. It should be a little over half your desired concurrency.
+    for a large production cloud with a cmax of 192 set the instance count of nabv to ~100 (vmc scale nabv --instances 100).
+    Note: be careful with cmax. Setting this to 32 or more requires a pretty beefy CF instance with multiple cloud controllers
+    and several DEAs. If you have a very small/toy-class CF instance make sure you don't overdo it.
+    * nabh should be between 16 and 32, depending on how hot of an http load you plan to run, at 32 you can easily overwhelm a small router pool with so a
+    rule of thumb would be to start with 16 for most mid-sized (100+ dea clouds), 32 for 250+ dea clouds, and 4-8 for very small clouds
     * nf should be set large IFF you plan on running the high thru-put xnf_ loads. Tun run 30,000 http requests per second run between 75 and 100 instances of nf
     * stac2 is a single instance app so leave it at 1
 
