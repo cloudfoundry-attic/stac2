@@ -50,7 +50,7 @@ drained by clicking the red light. Next there are 5 load buttons labeled low, 25
 Start a load by clicking one of these buttons and increase/decrease by clicking various levels. Note, since scenarios take time, decreasing the load or turning the
 system off is not instantaneous. The system drains itself of work naturally and depending on the mix this could take seconds to minutes. Stac2 is inactive when the
 on/off control is light gray and none of the blue lights are on in the light grid at the bottom of the screen. Make sure to let stac2 go idle before restarting components, etc.
-* **load selector** - the load selector is below the light grid and is used to select the scenario that you intend to run. If this control is empty, follow the edit/reset/main process outlined above.
+* **load selector** - the load selector is below the on/off controls and is used to select the scenario that you intend to run. If this control is empty, follow the edit/reset/main process outlined above.
 * **cloud selector** - leave this alone
 * **http request counter** - this green counter on the upper right shows the amount of http traffic sent to apps created by stac2 workloads, or in the case of static loads like xnf_*, traffic to existing apps.
 * **cc api calls** - this yellow counter shows the number of cloud foundry api calls executed per second
