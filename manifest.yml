@@ -14,6 +14,7 @@ applications:
         provider: core
         version: '2.6'
         plan: '100'
+    plan: 'P200'
   ./nabv:
     name: nabv
     url: ${name}.${target-base}
@@ -32,6 +33,7 @@ applications:
         provider: core
         version: '2.2'
         plan: '100'
+    plan: 'P200'
   ./stac2:
     name: stac2
     url: ${name}.${target-base}
@@ -50,6 +52,7 @@ applications:
         provider: core
         version: '2.2'
         plan: '100'
+    plan: 'P200'
   ./nf:
     name: nf
     url: ${name}.${target-base}
@@ -57,3 +60,4 @@ applications:
     instances: 16
     runtime: node06
     framework: node
+    plan: 'P200'
