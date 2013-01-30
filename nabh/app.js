@@ -19,11 +19,19 @@ console.log("app.js: instance: " + util.inspect(instance));
 var redis = load_redis();
 function load_redis() {
   var settings = null;
-  if (vcap_services['redis-2.2']) {
+
+  if (settings == null && vcap_services['redis-2.6']) {
+    settings = vcap_services['redis-2.6'][0]
+  }
+
+  if (settings == null && vcap_services['redis-2.2']) {
     settings = vcap_services['redis-2.2'][0]
-  } else {
+  }
+
+  if (settings == null) {
     settings = vcap_services['redis'][0]
   }
+
   var ns = require('./lib/node_redis')
 
   var worker_client1 = ns.createClient(settings['credentials']['port'], settings['credentials']['hostname']);

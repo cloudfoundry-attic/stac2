@@ -106,6 +106,7 @@ end
 $NOT_AUTHORIZED = {"status" => "not authorized"}.to_json
 redis = nil
 redis = $vcap_services['redis'][0] if $vcap_services['redis']
+redis = $vcap_services['redis-2.6'][0] if !redis && $vcap_services['redis-2.6']
 redis = $vcap_services['redis-2.2'][0] if !redis && $vcap_services['redis-2.2']
 
 redis_conf = {:host => redis['credentials']['hostname'],
@@ -116,6 +117,7 @@ $redis_t3 = Redis.new redis_conf
 # mongo
 mongo = nil
 mongo = $vcap_services['mongodb'][0] if $vcap_services['mongodb']
+mongo = $vcap_services['mongodb-2.2'][0] if !mongo && $vcap_services['mongodb-2.2']
 mongo = $vcap_services['mongodb-2.0'][0] if !mongo && $vcap_services['mongodb-2.0']
 mongo = $vcap_services['mongodb-1.8'][0] if !mongo && $vcap_services['mongodb-1.8']
 mc = {:host => mongo['credentials']['host'],
