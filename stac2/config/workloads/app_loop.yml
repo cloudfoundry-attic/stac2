@@ -24,7 +24,7 @@ workloads:
             suspended: true
           - action: create_service
             service: mysql
-            plan: P200
+            plan: 200
             servicename: 0
           - action: user_services
           - action: pause
@@ -72,7 +72,7 @@ workloads:
             suspended: true
           - action: create_service
             service: mysql
-            plan: P200
+            plan: 200
             servicename: 0
           - action: user_services
           - action: pause

@@ -60,9 +60,8 @@ class VmcWorkItem
     total_services_count = 0
     users.each do |u|
       $log.debug "ea(u): #{u.pretty_inspect}"
-      status = @cfclient.login({:username => u['name'], :password => u['password']})
+      @cfclient.login(u['name'], u['password'])
       login_extras
-      key = u['name']
       v = {'name'=>u['name']}
 
       # enum the apps and services
@@ -224,7 +223,7 @@ class VmcWorkItem
   # workitem
   def rundown
     begin
-      @cfclient.login({:username => @user, :password => @password})
+      @cfclient.login(@user, @password)
       login_extras
       if @t['appnames']
         @t['appnames'].each do |app|
@@ -344,7 +343,7 @@ class VmcWorkItem
         case action_name
 
           when 'login'
-            rv = @cfclient.login({:username => @user, :password => @password})
+            rv = @cfclient.login(@user, @password)
             raise "failure executing action: #{action_name}" if !@cfclient.logged_in?
             login_extras
 
@@ -556,7 +555,7 @@ class VmcWorkItem
             score = http_rv[:response_status]
             log_action = :http_mode
             if score >= 400
-              raise "synch http failure #{score}"
+              raise "synch http failure #{score}, body #{http_rv[:response_body]}"
             end
           end
         end
@@ -825,10 +824,11 @@ class VmcWorkItem
         rv[:mode] = :synchronous
         # todo(markl): this is lame, needs to do support for an args array as well...
         url = "http://#{@t['appnames'][a['appname']]}.#{@cloud['app_domain']}#{a['path']}"
-        httpclient = HTTPClient.new()
+        httpclient = HTTPClient.new
         response = httpclient.get url
         $log.info("doHttp-synch: #{response.status}, #{url}, #{@user}, #{a.pretty_inspect}")
         rv[:response_status] = response.status
+        rv[:response_body] = response.body
         attempts = attempts + 1
         if response.status.to_i >= 400
           # on a failed call, sleep for a second before the retry

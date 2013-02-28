@@ -60,7 +60,7 @@ workloads:
             servicename: 0
           - action: create_service
             service: mysql
-            plan: P200
+            plan: 200
             servicename: 1
           - action: bind_service
             appname: 0
@@ -116,7 +116,7 @@ workloads:
             servicename: 0
           - action: create_service
             service: mysql
-            plan: P200
+            plan: 200
             servicename: 1
           - action: bind_service
             appname: 0

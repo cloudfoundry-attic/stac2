@@ -372,17 +372,17 @@ for each action is a function of the action. Reading the workloads and the code 
     # On v1 systems, service creation is supported for redis, mysql, and postgresql services.
     # Adding the others is straightforward, but requires a small code change to include the static manifest map
     # used to drive cfoundry. On v2 systems, service creation is allows service offerings to be selected
-    # by plan-name (d100, p200, etc.) and label. The core and version attributes are not supported as selectors.
+    # by plan-name (100, 200, etc.) and label. The core and version attributes are not supported as selectors.
     # If the plan key is supplied then it is honored on v2 systems and ignored on v1 systems. If the plan
     # key is not supplied then the d100 version of the service is created.
     # create_service requires a dynamically created service name so the workload using a service
     # must include a servicenames section similar to the way that creating an app requires an appnames section
 
-    # create a p200 class mysql service. on v1 systems, the plan attribute is ignored and the :tier => 'free'
+    # create a 200 class mysql service. on v1 systems, the plan attribute is ignored and the :tier => 'free'
     # service is created (see V1_SERVICE_MAP in vmcworkitem.rb)
     - action: create_service
       service: mysql
-      plan: P200
+      plan: 200
       servicename: 0
 
     # create a d100 class redis service

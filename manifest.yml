@@ -7,40 +7,43 @@ applications:
     memory: 128M
     instances: 16
     runtime: node06
-    framework: node
+    framework: buildpack
+    command: node app.js
     services:
       stac2-redis:
         label: redis
         provider: core
         version: '2.6'
-        plan: '100'
-    plan: 'P200'
+        plan: '200'
+    plan: '200'
   ./nabv:
     name: nabv
     url: ${name}.${target-base}
     memory: 128M
     instances: 16
     runtime: ruby18
-    framework: sinatra
+    framework: buildpack
+    command: bundle exec ruby nabv.rb -p $PORT
     services:
       stac2-redis:
         label: redis
         provider: core
         version: '2.6'
-        plan: '100'
+        plan: '200'
       stac2-mongo:
         label: mongodb
         provider: core
         version: '2.2'
-        plan: '100'
-    plan: 'P200'
+        plan: '250'
+    plan: '200'
   ./stac2:
     name: stac2
     url: ${name}.${target-base}
     memory: 128M
     instances: 1
     runtime: ruby18
-    framework: sinatra
+    framework: buildpack
+    command: bundle exec ruby stac2.rb -p $PORT
     services:
       stac2-redis:
         label: redis
@@ -52,12 +55,13 @@ applications:
         provider: core
         version: '2.2'
         plan: '100'
-    plan: 'P200'
+    plan: '200'
   ./nf:
     name: nf
     url: ${name}.${target-base}
     memory: 64M
     instances: 16
     runtime: node06
-    framework: node
-    plan: 'P200'
+    framework: buildpack
+    command: node app.js
+    plan: '200'

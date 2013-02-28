@@ -2,7 +2,7 @@ GEM
   remote: http://rubygems.org/
   specs:
     activesupport (3.0.6)
-    bson (1.6.2)
+    bson (1.8.2)
     daemons (1.1.8)
     eventmachine (0.12.10)
     haml (3.1.4)
@@ -17,8 +17,8 @@ GEM
       mime-types (~> 1.16)
       treetop (~> 1.4.8)
     mime-types (1.17.2)
-    mongo (1.6.2)
-      bson (~> 1.6.2)
+    mongo (1.8.2)
+      bson (~> 1.8.2)
     polyglot (0.3.1)
     pony (1.1)
       mail (> 2.0)

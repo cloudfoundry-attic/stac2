@@ -7,7 +7,6 @@ require 'redis'
 require 'haml'
 require 'json/pure'
 require 'pp'
-require 'parsedate'
 require 'time'
 require 'logger'
 require 'hmac-sha1'
@@ -15,130 +14,122 @@ require 'httpclient'
 require 'pony'
 require 'mongo'
 
-begin
-  $log = Logger.new(STDOUT)
-  #$log.level = Logger::DEBUG
-  $log.level = Logger::INFO
-  #$log.level = Logger::WARN
+$log = Logger.new(STDOUT)
+#$log.level = Logger::DEBUG
+$log.level = Logger::INFO
+#$log.level = Logger::WARN
 
-  $vcap_services = JSON.parse(ENV['VCAP_SERVICES']) if ENV['VCAP_SERVICES']
-  $vcap_app = JSON.parse(ENV['VCAP_APPLICATION']) if ENV['VCAP_APPLICATION']
-  $log.debug "vcs: #{$vcap_services.pretty_inspect}"
-  $log.debug "vca: #{$vcap_app.pretty_inspect}"
+$vcap_services = JSON.parse(ENV['VCAP_SERVICES']) if ENV['VCAP_SERVICES']
+$vcap_app = JSON.parse(ENV['VCAP_APPLICATION']) if ENV['VCAP_APPLICATION']
+$log.debug "vcs: #{$vcap_services.pretty_inspect}"
+$log.debug "vca: #{$vcap_app.pretty_inspect}"
 
-  $app_name = $vcap_app['name']
-  $app_host = $vcap_app['uris'][0]
-  index = $app_host.index "#{$app_name}."
-  if index == 0
-    $stac2_base_domain = $app_host.gsub("#{$app_name}.",'')
-    $default_if_null_naburl = "http://nabh.#{$stac2_base_domain}"
-    $default_if_null_nabvurl = "http://nabv.#{$stac2_base_domain}"
-  else
-    $log.debug("exiting an: #{$app_name}, au: #{$app_host}, index: #{index} of #{$app_name}.")
-    exit
-  end
-  $log.info("$default_if_null_naburl: #{$default_if_null_naburl}")
-  $log.info("$default_if_null_nabvurl: #{$default_if_null_nabvurl}")
-
-  $NOT_AUTHORIZED = {"status" => "not authorized"}.to_json
-
-  redis = nil
-  redis = $vcap_services['redis'][0] if $vcap_services['redis']
-  redis = $vcap_services['redis-2.6'][0] if !redis && $vcap_services['redis-2.6']
-  redis = $vcap_services['redis-2.2'][0] if !redis && $vcap_services['redis-2.2']
-
-  redis_conf = {:host => redis['credentials']['hostname'],
-                :port => redis['credentials']['port'],
-                :password => redis['credentials']['password']}
-  $redis = Redis.new redis_conf
-  $redis2 = Redis.new redis_conf
-  $redis3 = Redis.new redis_conf
-  $redis4 = Redis.new redis_conf
-
-  # mongo
-  mongo = nil
-  mongo = $vcap_services['mongodb'][0] if $vcap_services['mongodb']
-  mongo = $vcap_services['mongodb-2.2'][0] if !mongo && $vcap_services['mongodb-2.2']
-  mongo = $vcap_services['mongodb-2.0'][0] if !mongo && $vcap_services['mongodb-2.0']
-  mongo = $vcap_services['mongodb-1.8'][0] if !mongo && $vcap_services['mongodb-1.8']
-
-  mc = {:host => mongo['credentials']['host'],
-                :port => mongo['credentials']['port'],
-                :db => mongo['credentials']['db'],
-                :username => mongo['credentials']['username'],
-                :password => mongo['credentials']['password']}
-  mc[:connection_string] = "mongodb://#{mc[:username]}:#{mc[:password]}@#{mc[:host]}:#{mc[:port]}/#{mc[:db]}"
-  $log.info("mongo: #{mongo.pretty_inspect}, mc: #{mc.pretty_inspect}")
-  $mongo = Mongo::Connection.new(mc[:connection_string])
-  $log.debug("mongo(1a): Mongo::Connection.new(#{mc[:connection_string]}) --> #{$mongo.pretty_inspect}")
-  $mongodb = $mongo.db(mc[:db])
-
-  #$mongo2 = Mongo::Connection.new(mc[:host], mc[:port])
-  #$log.info("mongo(1b): Mongo::Connection.new(#{mc[:host]}, #{mc[:port]}) --> #{$mongo2.pretty_inspect}")
-
-  #$redis = Redis.new redis_conf
-  #$redis2 = Redis.new redis_conf
-  #$redis3 = Redis.new redis_conf
-
-
-  # If we are running within the cloud, clean up configs.
-  #FileUtils.rm_rf(config_path) if ENV['VCAP_APPLICATION']
-
-  #use Rack::Auth::Basic do |username, password|
-  #  [username, password] == [config['auth']['user'], config['auth']['pass']]
-  #end
-
-  $basepath = File.expand_path(File.join(File.dirname(__FILE__), '.'))
-  $config_path = File.expand_path("config", "#{__FILE__}/..")
-  $log.debug "config_path #{$config_path}"
-  $email_html_template = File.expand_path("views/email.haml", "#{__FILE__}/..")
-  $email_plain_template = File.expand_path("views/email_plain.haml", "#{__FILE__}/..")
-
-  # link to our libraries
-  $:.unshift(File.join(File.dirname(__FILE__), 'lib'))
-  require 'stac2/helpers'
-  require 'stac2/maillib'
-  require 'stac2/workload'
-
-  $clouds = $redis.smembers("vmc::clouds")
-  $naburl = $redis.get("vmc::naburl")
-  $log.debug "s2: clouds: #{$clouds.pretty_inspect}"
-
-  # these are the actions that we display
-  # note, pause is not in the list, etc.
-  # the purpose of this indirection is to enable
-  # display names in the UI and also to establish ordering
-  # independent of what we see in the various accounting redis sets
-  $actions = [
-    ['info','vmc info'],
-    ['login', 'vmc login'],
-    ['apps', 'vmc apps'],
-    ['create_app', 'vmc push'],
-    ['update_app', 'vmc update'],
-    ['delete_app', 'vmc delete'],
-    ['start_app', 'vmc start'],
-    ['stop_app', 'vmc stop'],
-    ['app_info', 'vmc stats'],
-    ['user_services', 'vmc services'],
-    ['system_services', 'vmc info --services'],
-    ['create_service', 'vmc create-service'],
-    ['delete_service', 'vmc delete-service'],
-    ['bind_service', 'vmc bind-service'],
-    ['create_space', 'vmc create-space'],
-    ['delete_space', 'vmc delete-space'],
-    ['http-req', 'http request'],
-  ]
-
-  # Web pages here...
-
-  $cloudsandworkloads = nil
-  $loadcloud = nil
-rescue Exception => e
-  puts "* * * FATAL UNHANDLED EXCEPTION ***"
-  puts "e: #{e.inspect}"
-  puts "at@ #{e.backtrace.join("\n")}"
+$app_name = $vcap_app['name']
+$app_host = $vcap_app['uris'][0]
+index = $app_host.index "#{$app_name}."
+if index == 0
+  $stac2_base_domain = $app_host.gsub("#{$app_name}.",'')
+  $default_if_null_naburl = "http://nabh.#{$stac2_base_domain}"
+  $default_if_null_nabvurl = "http://nabv.#{$stac2_base_domain}"
+else
+  $log.debug("exiting an: #{$app_name}, au: #{$app_host}, index: #{index} of #{$app_name}.")
+  exit
 end
+$log.info("$default_if_null_naburl: #{$default_if_null_naburl}")
+$log.info("$default_if_null_nabvurl: #{$default_if_null_nabvurl}")
 
+$NOT_AUTHORIZED = {"status" => "not authorized"}.to_json
+
+redis = nil
+redis = $vcap_services['redis'][0] if $vcap_services['redis']
+redis = $vcap_services['redis-2.6'][0] if !redis && $vcap_services['redis-2.6']
+redis = $vcap_services['redis-2.2'][0] if !redis && $vcap_services['redis-2.2']
+
+redis_conf = {:host => redis['credentials']['hostname'],
+              :port => redis['credentials']['port'],
+              :password => redis['credentials']['password']}
+$redis = Redis.new redis_conf
+$redis2 = Redis.new redis_conf
+$redis3 = Redis.new redis_conf
+$redis4 = Redis.new redis_conf
+
+# mongo
+mongo = nil
+mongo = $vcap_services['mongodb'][0] if $vcap_services['mongodb']
+mongo = $vcap_services['mongodb-2.2'][0] if !mongo && $vcap_services['mongodb-2.2']
+mongo = $vcap_services['mongodb-2.0'][0] if !mongo && $vcap_services['mongodb-2.0']
+mongo = $vcap_services['mongodb-1.8'][0] if !mongo && $vcap_services['mongodb-1.8']
+
+mc = {:host => mongo['credentials']['host'],
+              :port => mongo['credentials']['port'],
+              :db => mongo['credentials']['db'],
+              :username => mongo['credentials']['username'],
+              :password => mongo['credentials']['password']}
+$log.info("mongo: #{mongo.pretty_inspect}, mc: #{mc.pretty_inspect}")
+$mongo = Mongo::MongoClient.new(mc[:host], mc[:port])
+$mongodb = $mongo[mc[:db]]
+$mongodb.authenticate(mc[:username], mc[:password])
+
+#$mongo2 = Mongo::Connection.new(mc[:host], mc[:port])
+#$log.info("mongo(1b): Mongo::Connection.new(#{mc[:host]}, #{mc[:port]}) --> #{$mongo2.pretty_inspect}")
+
+#$redis = Redis.new redis_conf
+#$redis2 = Redis.new redis_conf
+#$redis3 = Redis.new redis_conf
+
+
+# If we are running within the cloud, clean up configs.
+#FileUtils.rm_rf(config_path) if ENV['VCAP_APPLICATION']
+
+#use Rack::Auth::Basic do |username, password|
+#  [username, password] == [config['auth']['user'], config['auth']['pass']]
+#end
+
+$basepath = File.expand_path(File.join(File.dirname(__FILE__), '.'))
+$config_path = File.expand_path("config", "#{__FILE__}/..")
+$log.debug "config_path #{$config_path}"
+$email_html_template = File.expand_path("views/email.haml", "#{__FILE__}/..")
+$email_plain_template = File.expand_path("views/email_plain.haml", "#{__FILE__}/..")
+
+# link to our libraries
+$:.unshift(File.join(File.dirname(__FILE__), 'lib'))
+require 'stac2/helpers'
+require 'stac2/maillib'
+require 'stac2/workload'
+
+$clouds = $redis.smembers("vmc::clouds")
+$naburl = $redis.get("vmc::naburl")
+$log.debug "s2: clouds: #{$clouds.pretty_inspect}"
+
+# these are the actions that we display
+# note, pause is not in the list, etc.
+# the purpose of this indirection is to enable
+# display names in the UI and also to establish ordering
+# independent of what we see in the various accounting redis sets
+$actions = [
+  ['info','vmc info'],
+  ['login', 'vmc login'],
+  ['apps', 'vmc apps'],
+  ['create_app', 'vmc push'],
+  ['update_app', 'vmc update'],
+  ['delete_app', 'vmc delete'],
+  ['start_app', 'vmc start'],
+  ['stop_app', 'vmc stop'],
+  ['app_info', 'vmc stats'],
+  ['user_services', 'vmc services'],
+  ['system_services', 'vmc info --services'],
+  ['create_service', 'vmc create-service'],
+  ['delete_service', 'vmc delete-service'],
+  ['bind_service', 'vmc bind-service'],
+  ['create_space', 'vmc create-space'],
+  ['delete_space', 'vmc delete-space'],
+  ['http-req', 'http request'],
+]
+
+# Web pages here...
+
+$cloudsandworkloads = nil
+$loadcloud = nil
 
 # render html homepage, deliver js code
 get '/' do

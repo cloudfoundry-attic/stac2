@@ -7,7 +7,6 @@ require 'redis'
 require 'haml'
 require 'json/pure'
 require 'pp'
-require 'parsedate'
 require 'time'
 require 'logger'
 require 'uuidtools'
@@ -125,11 +124,9 @@ mc = {:host => mongo['credentials']['host'],
               :db => mongo['credentials']['db'],
               :username => mongo['credentials']['username'],
               :password => mongo['credentials']['password']}
-mc[:connection_string] = "mongodb://#{mc[:username]}:#{mc[:password]}@#{mc[:host]}:#{mc[:port]}/#{mc[:db]}"
-#$log.debug("mongo: #{mongo.pretty_inspect}, mc: #{mc.pretty_inspect}")
-$mongo = Mongo::Connection.new(mc[:connection_string])
-#$log.debug("mongo(1a): Mongo::Connection.new(#{mc[:connection_string]}) --> #{$mongo.pretty_inspect}")
-$mongodb = $mongo.db(mc[:db])
+$mongo = Mongo::MongoClient.new(mc[:host], mc[:port])
+$mongodb = $mongo[mc[:db]]
+$mongodb.authenticate(mc[:username], mc[:password])
 
 
 # now that we know which clouds we are configured for
@@ -173,7 +170,7 @@ def setup_constants(cloud)
   begin
     $log.debug("sv2: login #{target} #{cloud['users'][0]['name']}/#{cloud['users'][0]['password']}")
     cfclient = CFoundry::Client.new(target)
-    cfclient.login({:username => cloud['users'][0]['name'], :password => cloud['users'][0]['password']})
+    cfclient.login(cloud['users'][0]['name'], cloud['users'][0]['password'])
   rescue Exception => e
     puts "exception during login #{target} #{cloud['users'][0]['name']}/#{cloud['users'][0]['password']}"
     puts e.pretty_inspect

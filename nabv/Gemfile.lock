@@ -1,37 +1,44 @@
 GEM
   remote: http://rubygems.org/
   specs:
-    activesupport (3.2.9)
-      i18n (~> 0.6)
-      multi_json (~> 1.0)
+    addressable (2.3.3)
     awesome_print (1.1.0)
-    bson (1.8.0)
-      activesupport
-    cfoundry (0.4.10)
-      multi_json (~> 1.4.0)
-      multipart-post (~> 1.1.0)
-      rubyzip (~> 0.9.9)
+    bson (1.8.2)
+    caldecott-client (0.0.2)
+      multi_json (~> 1.3)
+    cf-autoconfig (0.2.0)
+      cf-runtime (= 0.2.0)
+    cf-runtime (0.2.0)
+    cf-uaa-lib (1.3.7)
+      multi_json
+    cfoundry (0.5.1.rc4)
+      cf-uaa-lib (~> 1.3.3)
+      multi_json (~> 1.3)
+      multipart-post (~> 1.1)
+      rubyzip (~> 0.9)
     clouseau (0.0.2)
       rubyzip (~> 0.9.9)
     daemons (1.1.9)
     eventmachine (1.0.0)
     haml (3.1.7)
     httpclient (2.3.0.1)
-    i18n (0.6.1)
-    interact (0.5.0)
-    json_pure (1.6.7)
+    interact (0.5.2)
+    json_pure (1.7.7)
     logger (1.2.8)
-    manifests-vmc-plugin (0.4.17)
-      cfoundry (~> 0.4.0)
-    mongo (1.8.0)
-      bson (~> 1.8.0)
-    mothership (0.3.5)
-    multi_json (1.4.0)
-    multipart-post (1.1.5)
+    manifests-vmc-plugin (0.6.1)
+      cfoundry (~> 0.5.0)
+    mime-types (1.21)
+    mongo (1.8.2)
+      bson (~> 1.8.2)
+    mothership (0.5.1)
+    multi_json (1.6.1)
+    multipart-post (1.2.0)
     rack (1.4.1)
     rack-protection (1.3.1)
       rack
     redis (3.0.2)
+    rest-client (1.6.7)
+      mime-types (>= 1.16)
     rubyzip (0.9.9)
     sinatra (1.3.3)
       rack (~> 1.3, >= 1.3.6)
@@ -42,18 +49,22 @@ GEM
       eventmachine (>= 0.12.6)
       rack (>= 1.0.0)
     tilt (1.3.3)
-    tunnel-dummy-vmc-plugin (0.0.2)
-      cfoundry (~> 0.4.0)
+    tunnel-vmc-plugin (0.2.0)
+      addressable (~> 2.2)
+      caldecott-client (~> 0.0.2)
+      cfoundry (~> 0.5.0)
+      rest-client (~> 1.6)
+      uuidtools (~> 2.1)
     uuidtools (2.1.3)
-    vmc (0.4.7)
-      cfoundry (~> 0.4.10)
-      clouseau (~> 0.0.2)
-      interact (~> 0.5.0)
-      json_pure (~> 1.6.5)
-      manifests-vmc-plugin (~> 0.4.14)
-      mothership (~> 0.3.5)
-      multi_json (~> 1.4.0)
-      tunnel-dummy-vmc-plugin (~> 0.0.2)
+    vmc (0.5.0.rc1)
+      cfoundry (>= 0.5.1.rc2, < 0.6)
+      clouseau (~> 0.0)
+      interact (~> 0.5)
+      json_pure (~> 1.6)
+      manifests-vmc-plugin (~> 0.6)
+      mothership (>= 0.5.1, < 1.0)
+      multi_json (~> 1.3)
+      tunnel-vmc-plugin (~> 0.2)
 
 PLATFORMS
   ruby
@@ -61,7 +72,8 @@ PLATFORMS
 DEPENDENCIES
   awesome_print
   bundler
-  cfoundry
+  cf-autoconfig
+  cfoundry (~> 0.5.1.rc4)
   haml
   httpclient
   json_pure
@@ -71,4 +83,4 @@ DEPENDENCIES
   sinatra
   thin
   uuidtools
-  vmc
+  vmc (~> 0.5.0.rc1)
