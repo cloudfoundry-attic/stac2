@@ -114,7 +114,7 @@ function doWork(cmd) {
         // socket has been assigned, this is the appropriate place
         // to snapshot the start time and request rate
         tv_msec_start = tv_msec();
-        var one_s_key = "vmc::" + cmd.cloud + "::http_rate_1s::" + tv_sec();
+        var one_s_key = "cf::" + cmd.cloud + "::http_rate_1s::" + tv_sec();
         stats_redis.incrby(one_s_key, 1);
         stats_redis.expire(one_s_key, 10);
         });
@@ -141,13 +141,13 @@ function doWork(cmd) {
         // if we are supposed to record stats, then presumably
         // we are being driven by an app like stac2, the cloud
         // variable is set and the keys that we muck with are:
-        // vmc::{cloud}::http::action_count
-        // vmc::{cloud}::http::action_set
-        // vmc::{cloud}::http::time_{50, _50_100, etc.}
-        // vmc::{cloud}::http::response_status_set
-        // vmc::{cloud}::http::response_status__bucket_set
+        // cf::{cloud}::http::action_count
+        // cf::{cloud}::http::action_set
+        // cf::{cloud}::http::time_{50, _50_100, etc.}
+        // cf::{cloud}::http::response_status_set
+        // cf::{cloud}::http::response_status__bucket_set
         var tv = tv_sec();
-        var key_prefix = "vmc::" + cmd.cloud + "::http::";
+        var key_prefix = "cf::" + cmd.cloud + "::http::";
         var key_action_count = key_prefix + "action_count";
         var key_action_set = key_prefix + "action_set";
 
@@ -162,8 +162,8 @@ function doWork(cmd) {
 
       // stac2 style completion reporting
       if (cmd.record_stats && cmd.record_stats == 1) {
-        var key_prefix = "vmc::" + cmd.cloud + "::http::";
-        var key_time = "vmc::" + cmd.cloud + "::http::time";
+        var key_prefix = "cf::" + cmd.cloud + "::http::";
+        var key_time = "cf::" + cmd.cloud + "::http::time";
         var key_response_status_set = key_prefix + "response_status_set";
         var key_response_status_bucket_set = key_prefix + "response_status_bucket_set";
 
@@ -202,7 +202,7 @@ function doWork(cmd) {
         stats_redis.zincrby(key_response_status_bucket_set, 1, response_status_bucket);
 
         // log the timeout if we got here to do error on connect
-        var key_elog = "vmc::" + cmd.cloud + "::exception_queue";
+        var key_elog = "cf::" + cmd.cloud + "::exception_queue";
         var elog = {};
         var ts = parseInt(new Date().getTime()/1000);
         var lr;
@@ -243,7 +243,7 @@ function doWork(cmd) {
     }
 
     function perIterationAccounting(start, cmd, r, errno) {
-      var completion_queue = "vmc::" + cmd.cloud + "::completion_queue::" + cmd.cmd_uuid;
+      var completion_queue = "cf::" + cmd.cloud + "::completion_queue::" + cmd.cmd_uuid;
       log_completion_action(start,cmd,r,errno);
       if (iterations < 1) {
         stats_redis.rpush(completion_queue, 0);
@@ -264,7 +264,7 @@ function doWork(cmd) {
           // the requests in the cmd, finish up by
           // noting the number of requests in the
           // completion queue
-          var completion_queue = "vmc::" + cmd.cloud + "::completion_queue::" + cmd.cmd_uuid;
+          var completion_queue = "cf::" + cmd.cloud + "::completion_queue::" + cmd.cmd_uuid;
           stats_redis.rpush(completion_queue, cmd.n);
           stats_redis.expire(completion_queue, CQ_LIFETIME);
         }

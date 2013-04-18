@@ -6,7 +6,7 @@ var assert = require('assert');
 
 var routes = {
   "/fast-echo" : fastEcho,      // dispatch here for http workload generation
-  "/random-data": randomData    // dispatch here for vmc workload generation
+  "/random-data": randomData    // dispatch here for cf workload generation
 };
 
 

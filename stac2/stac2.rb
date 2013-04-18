@@ -97,8 +97,8 @@ require 'stac2/helpers'
 require 'stac2/maillib'
 require 'stac2/workload'
 
-$clouds = $redis.smembers("vmc::clouds")
-$naburl = $redis.get("vmc::naburl")
+$clouds = $redis.smembers("cf::clouds")
+$naburl = $redis.get("cf::naburl")
 $log.debug "s2: clouds: #{$clouds.pretty_inspect}"
 
 # these are the actions that we display
@@ -107,22 +107,22 @@ $log.debug "s2: clouds: #{$clouds.pretty_inspect}"
 # display names in the UI and also to establish ordering
 # independent of what we see in the various accounting redis sets
 $actions = [
-  ['info','vmc info'],
-  ['login', 'vmc login'],
-  ['apps', 'vmc apps'],
-  ['create_app', 'vmc push'],
-  ['update_app', 'vmc update'],
-  ['delete_app', 'vmc delete'],
-  ['start_app', 'vmc start'],
-  ['stop_app', 'vmc stop'],
-  ['app_info', 'vmc stats'],
-  ['user_services', 'vmc services'],
-  ['system_services', 'vmc info --services'],
-  ['create_service', 'vmc create-service'],
-  ['delete_service', 'vmc delete-service'],
-  ['bind_service', 'vmc bind-service'],
-  ['create_space', 'vmc create-space'],
-  ['delete_space', 'vmc delete-space'],
+  ['info','cf info'],
+  ['login', 'cf login'],
+  ['apps', 'cf apps'],
+  ['create_app', 'cf push'],
+  ['update_app', 'cf update'],
+  ['delete_app', 'cf delete'],
+  ['start_app', 'cf start'],
+  ['stop_app', 'cf stop'],
+  ['app_info', 'cf stats'],
+  ['user_services', 'cf services'],
+  ['system_services', 'cf info --services'],
+  ['create_service', 'cf create-service'],
+  ['delete_service', 'cf delete-service'],
+  ['bind_service', 'cf bind-service'],
+  ['create_space', 'cf create-space'],
+  ['delete_space', 'cf delete-space'],
   ['http-req', 'http request'],
 ]
 
@@ -248,7 +248,7 @@ get '/run-load' do
   halt 400 if !params[:host]
   halt 400 if !params[:start]
 
-  key = "vmc::#{params[:cloud]}::load"
+  key = "cf::#{params[:cloud]}::load"
   v = {
     'tv' => Time.now.tv_sec,
     'cloud' => params[:cloud],
@@ -311,7 +311,7 @@ Thread.new do
       sleep $runrate
       $log.debug("run-thread(1): tv: #{Time.now.tv_sec}")
       if $loadcloud
-        key =  "vmc::#{$loadcloud}::load"
+        key =  "cf::#{$loadcloud}::load"
         vj = $redis3.get key
         if vj
           v = JSON.parse(vj)
@@ -324,14 +324,14 @@ Thread.new do
             # then switch loads (drain both workqueues, then poke nabh)
             if $run_tv < v['tv'].to_i
               $run_tv = v['tv'].to_i
-              vmc_queue = "vmc::#{$loadcloud}::cmd_queue"
+              cf_queue = "cf::#{$loadcloud}::cmd_queue"
               http_queue = "http::#{$loadcloud}::cmd_queue"
-              $redis3.del vmc_queue
+              $redis3.del cf_queue
               $redis3.del http_queue
             end
 
             #
-            url = "#{v['host']}/vmc"
+            url = "#{v['host']}/cf"
             httpclient = HTTPClient.new()
             args = {
               'cloud' => v['cloud'],
@@ -360,9 +360,9 @@ Thread.new do
             end
           else
             logpass = 0
-            vmc_queue = "vmc::#{$loadcloud}::cmd_queue"
+            cf_queue = "cf::#{$loadcloud}::cmd_queue"
             http_queue = "http::#{$loadcloud}::cmd_queue"
-            $redis3.del vmc_queue
+            $redis3.del cf_queue
             $redis3.del http_queue
           end
         end
@@ -387,7 +387,7 @@ Thread.new do
       if $cloudsandworkloads
         queues = []
         $cloudsandworkloads['clouds'].each_key do |k|
-          queues << "vmc::#{k}::exception_queue"
+          queues << "cf::#{k}::exception_queue"
         end
         $log.debug "blpop(#{queues.pretty_inspect}, timeout)"
         queue, msg = $redis4.blpop(*[queues, 0].flatten)
@@ -455,7 +455,7 @@ end
 
 get '/cleanapps' do
   halt 400 if !params[:cloud]
-  nabvurl = $redis.get "vmc::nabvurl"
+  nabvurl = $redis.get "cf::nabvurl"
   nabvurl = nabvurl + "/cleanall"
   httpclient = HTTPClient.new()
   args = {'cloud' => params[:cloud]}

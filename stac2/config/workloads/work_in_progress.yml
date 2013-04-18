@@ -1,11 +1,11 @@
 # Copyright (c) 2009-2013 VMware, Inc.
 workloads:
   wip_placeholder:
-    display: simulate vmc target
+    display: simulate cf target
     load_multiplier: 12
 
     operations:
-      # vmc target * 5
+      # cf target * 5
       - op: sequence
         actions:
           - action: info

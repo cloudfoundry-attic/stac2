@@ -1,7 +1,7 @@
 # Copyright (c) 2009-2013 VMware, Inc.
 require 'yaml'
 require 'fileutils'
-require 'vmc'
+require 'cf'
 require 'cfoundry'
 require 'stringio'
 require 'httpclient'
@@ -26,7 +26,7 @@ V1_SERVICE_MAP = {
     },
 }
 
-class VmcWorkItem
+class CfWorkItem
   attr_reader :tv_start, :tv_end
 
   # init and timestamp a workitem
@@ -132,9 +132,9 @@ class VmcWorkItem
     # load the workload definitions from redis hash
     # the apps are static and each nabv has these as globals
     # loaded at boot.
-    t = @redis.hget("vmc::workloadhash", @cmd['wl'])
+    t = @redis.hget("cf::workloadhash", @cmd['wl'])
     if !t
-      t = @redis.hget("vmc::workloadhash", 'sys_basic')
+      t = @redis.hget("cf::workloadhash", 'sys_basic')
     end
     @t = JSON.parse(t)
 
@@ -146,7 +146,7 @@ class VmcWorkItem
     @apps = apps.clone
     assignUser
     @target = "http://#{@cloud['cc_target']}"
-    @v2cache = JSON.parse(@redis.get("vmc::#{@cloud['shortname']}::v2cache"))
+    @v2cache = JSON.parse(@redis.get("cf::#{@cloud['shortname']}::v2cache"))
     if @cloud['mode'] == 'v2'
       @cloudmode = :v2
       @spacename = @cloud['space']
@@ -284,8 +284,8 @@ class VmcWorkItem
     rv = true
     # check to see if cmax setting
     # allows us to continue
-    cmax = @redis.get("vmc::#{@cloud['shortname']}::cmax").to_i
-    aw = @redis.scard("vmc::#{@cloud['shortname']}::active_workers").to_i
+    cmax = @redis.get("cf::#{@cloud['shortname']}::cmax").to_i
+    aw = @redis.scard("cf::#{@cloud['shortname']}::active_workers").to_i
     if aw > cmax
       $log.info("continueWorking?: aborting item: #{@user}, #{aw} > #{cmax}")
       rv = false
@@ -324,7 +324,7 @@ class VmcWorkItem
       #end
 
       score = 1
-      # each action is a relatively simple vmc command
+      # each action is a relatively simple cf command
       # e.g., apps, info, etc.
       # simple commands executed inline
       $log.info("executeSequence-start: #{a['action']}, #{@user}")
@@ -386,8 +386,6 @@ class VmcWorkItem
             newapp.name = appname
             newapp.total_instances = stacapp['instances']
             newapp.memory = stacapp['memory']
-            newapp.framework = @cfclient.framework(@v2cache['frameworks'][stacapp['framework']])
-            newapp.runtime = @cfclient.runtime(@v2cache['runtimes'][stacapp['runtime']])
 
             raise "failure(0.1) executing action: #{action_name}" if @appdomain == nil
             if @cloudmode == :v1
@@ -569,8 +567,8 @@ class VmcWorkItem
       rescue Exception => e
         # todo(markl) - add log stream of events
         $log.info("--executeSequence-failed: #{a['action']}, #{@user}, #{elapsedTime}, #{a.pretty_inspect}, #{e.pretty_inspect}")
-        @redis.incr "vmc::#{@cloud['shortname']}::actions::fail_count"
-        @redis.zincrby "vmc::#{@cloud['shortname']}::actions::fail_set", 1, a['action']
+        @redis.incr "cf::#{@cloud['shortname']}::actions::fail_count"
+        @redis.zincrby "cf::#{@cloud['shortname']}::actions::fail_set", 1, a['action']
         $log.warn "*** action #{a['action']} failed for user #{@user}***"
         $log.warn "e: #{e.pretty_inspect}"
         $log.warn "at@ #{e.backtrace.join("\n")}"
@@ -578,7 +576,7 @@ class VmcWorkItem
         cflog = transform_cf_log
         # log the exception, but make sure we don't grow to more than 20 before
         # a capture cycle
-        # note, vmc seems to emit log records like:
+        # note, cf seems to emit log records like:
         # <CLASS, DESCRIPTION,>\n
         # the code below is supposed to remove the #< and >\n
         # need to validate a 404 on synch http calls
@@ -594,9 +592,9 @@ class VmcWorkItem
                 'cflog' => cflog}
 
         # pump into cloud's exception_queue which gets processed and splatted into mongo
-        # by the vmc worker
-        @redis.lpush "vmc::#{@cloud['shortname']}::exception_queue", elog.to_json
-        @redis.ltrim "vmc::#{@cloud['shortname']}::exception_queue", 0, 100
+        # by the cf worker
+        @redis.lpush "cf::#{@cloud['shortname']}::exception_queue", elog.to_json
+        @redis.ltrim "cf::#{@cloud['shortname']}::exception_queue", 0, 100
 
         # always abort on exceptions
         @fatal_abort = true
@@ -605,17 +603,17 @@ class VmcWorkItem
   end
 
   def log_instance(add, cloud)
-    @redis.sadd "vmc::#{cloud}::active_workers", @active_worker_id if add == :add
-    @redis.srem "vmc::#{cloud}::active_workers", @active_worker_id if add == :remove
+    @redis.sadd "cf::#{cloud}::active_workers", @active_worker_id if add == :add
+    @redis.srem "cf::#{cloud}::active_workers", @active_worker_id if add == :remove
   end
 
   def log_user_activity(cloud, u)
-    @redis.zincrby "vmc::#{cloud}::active_users", 1, u
+    @redis.zincrby "cf::#{cloud}::active_users", 1, u
   end
 
   def log_action_rate(cloud, tv)
     # 1s buckets
-    one_s_key = "vmc::#{cloud}::rate_1s::#{tv}"
+    one_s_key = "cf::#{cloud}::rate_1s::#{tv}"
 
     # increment the bucket and set expires, key
     # will eventually expires Ns after the last write
@@ -630,11 +628,11 @@ class VmcWorkItem
     if action == :http_mode
       # note: js version of this code is in nabh/http-worker, this is used for asynch http
       # this version here is for synchronous
-      key_prefix = "vmc::#{cloud}::http"
+      key_prefix = "cf::#{cloud}::http"
       key_time = "#{key_prefix}::time";
       key_action_count = "#{key_prefix}::action_count";
       key_action_set = "#{key_prefix}::action_set";
-      one_s_key = "vmc::#{cloud}::http_rate_1s::#{tv}"
+      one_s_key = "cf::#{cloud}::http_rate_1s::#{tv}"
 
       # log success by raw count and by set count
       # increment rate bucket
@@ -645,8 +643,8 @@ class VmcWorkItem
     else
       # log success by raw count and by set count
       # increment rate bucket
-      @redis.incr "vmc::#{cloud}::actions::action_count"
-      @redis.zincrby "vmc::#{cloud}::actions::action_set", 1, action
+      @redis.incr "cf::#{cloud}::actions::action_count"
+      @redis.zincrby "cf::#{cloud}::actions::action_set", 1, action
       log_action_rate(cloud, tv)
     end
   end
@@ -677,7 +675,7 @@ class VmcWorkItem
     if action == :http_mode
       # note: js version of this code is in nabh/http-worker, this is used for asynch http
       # this version here is for synchronous
-      key_prefix = "vmc::#{cloud}::http"
+      key_prefix = "cf::#{cloud}::http"
       key_time = "#{key_prefix}::time";
       key_response_status_set = "#{key_prefix}::response_status_set";
       key_response_status_bucket_set = "#{key_prefix}::response_status_bucket_set";
@@ -691,24 +689,24 @@ class VmcWorkItem
     else
       # log time for real ops
       if (action != 'pause')
-        @redis.zincrby "vmc::#{cloud}::actions::time#{suffix}", score, action
-        @redis.zincrby "vmc::#{cloud}::actions::time_total", et, action
+        @redis.zincrby "cf::#{cloud}::actions::time#{suffix}", score, action
+        @redis.zincrby "cf::#{cloud}::actions::time_total", et, action
       end
 
-      action_count = @redis.zscore("vmc::#{cloud}::actions::action_set", action).to_i
-      action_time = @redis.zscore("vmc::#{cloud}::actions::time_total", action).to_i
+      action_count = @redis.zscore("cf::#{cloud}::actions::action_set", action).to_i
+      action_time = @redis.zscore("cf::#{cloud}::actions::time_total", action).to_i
       action_average = action_time/action_count
-      @redis.zadd "vmc::#{cloud}::actions::time_average", action_average, action
+      @redis.zadd "cf::#{cloud}::actions::time_average", action_average, action
       $log.debug("lca: #{action} #{et}ms, count #{action_count}, time #{action_time}, avg: #{action_average}")
     end
     # random side effect... we conditionally capture the
     # current time in redis. If the key does not exist, its
     # written. Otherwise, its left alone. This effectively
     # establishes the boot-time since last flush. Flush is as
-    # simple as enumerating the vmc:: keys, or at least vmc::#{cloud}
+    # simple as enumerating the cf:: keys, or at least cf::#{cloud}
     # keys and deleting them all
     ts = Time.now.tv_sec
-    @redis.setnx "vmc::#{cloud}::boot_time", ts
+    @redis.setnx "cf::#{cloud}::boot_time", ts
   end
 
   def time_diff_ms(start, finish)
@@ -721,7 +719,7 @@ class VmcWorkItem
     $log.info("executeLoop: #{@user}, #{l['n']}, #{l.pretty_inspect}")
     n = l['n']
     ops = l['operations']
-    @redis.incr "vmc::#{@cloud['shortname']}::actions::loop_count"
+    @redis.incr "cf::#{@cloud['shortname']}::actions::loop_count"
 
     n.times do
       executeOps(ops)
@@ -872,7 +870,7 @@ class VmcWorkItem
         # add the key to the @http_barrier_keys array
         # and also add to the @http_barrier_stats array
         # the http_drain command will wait on this data
-        completion_queue = "vmc::#{@cloud['shortname']}::completion_queue::#{body['uuid']}"
+        completion_queue = "cf::#{@cloud['shortname']}::completion_queue::#{body['uuid']}"
         stats = {
           :n => a['n'],
           :completed => 0

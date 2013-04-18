@@ -1,4 +1,6 @@
 # Copyright (c) 2009-2013 VMware, Inc.
+require 'yaml'
+
 class Workload
   attr_reader :workloads
   attr_reader :workload_files

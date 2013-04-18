@@ -8,8 +8,8 @@ gem 'thin'
 gem 'json_pure'
 gem 'haml'
 gem 'redis'
-gem 'vmc', "~> 0.5.0.rc1"
-gem 'cfoundry', "~> 0.5.1.rc4"
+gem 'cf'
+gem 'cfoundry'
 gem 'logger'
 gem 'uuidtools'
 gem 'httpclient'

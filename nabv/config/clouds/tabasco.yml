@@ -21,9 +21,9 @@
 # If we assume a v1 cloud, named staging, living at cf01.qa.las01.vcsops.com, the following three
 # properties would be used
 #
-# shortname: staging
-# cc_target: api.cf01.qa.las01.vcsops.com
-# app_domain: cf01.qa.las01.vcsops.com
+shortname: tabasco
+cc_target: api.tabasco.cf-app.com
+app_domain: tabasco.cf-app.com
 #
 # 2) the email section is optional. If present, and configured correctly, you can click on the email
 # button to generate an email report of the current state of the run. The email section below shows
@@ -46,8 +46,8 @@
 #    - the value of cmax supplies the maximum concurrency, i.e., the maximum number of concurrent nabv threads
 #      that should be running at a time. The practical max on this (based on the current UI is 192).
 #    - the value of default_workload supplies the default workload in the workload selector box
-# cmax: 192
-# default_workload: sys_basic_http_cpu
+cmax: 192
+default_workload: sys_basic_http_cpu
 #
 # 4) For classic cloud foundry, stac2 needs to use a large pool of user accounts which is creates apps
 # and services within. This allows it to stay mostly within the 2GB quota. If your user pool is too small
@@ -61,15 +61,15 @@
 # For both v1 and v2 clouds you need a user section that looks like the one shown below. Just use cf register
 # to create user accounts. Note for large values of cmax you need large pools of users. A 3:1 or 2:1 ratio is best.
 #
-# users:
-#   - name: stac2u0@rbcon.com
-#     password: 123456
-#   - name: stac2u1@rbcon.com
-#     password: 123456
+users:
+  - name: stac2u0@rbcon.com
+    password: 123456
+  - name: stac2u1@rbcon.com
+    password: 123456
 #
 # For v2 clouds, note that the cloud is a v2 cloud and also supply the org and space for the cloud. While this data
 # is very related to the user list, for readability, It's probably best to include the following properties below the
 # shortname property
-# mode: v2
-# org: stac2
-# space: stac2_run
+mode: v2
+org: stac2
+space: stac2

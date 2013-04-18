@@ -14,7 +14,7 @@ workloads:
       - please-compute
 
     operations:
-      # login, get situated, run vmc apps and services
+      # login, get situated, run cf apps and services
       - op: sequence
         actions:
           - action: login
@@ -85,7 +85,7 @@ workloads:
       - please-compute
 
     operations:
-      # login, get situated, run vmc apps and services
+      # login, get situated, run cf apps and services
       - op: sequence
         actions:
           - action: login
@@ -162,7 +162,7 @@ workloads:
       - please-compute
 
     operations:
-      # login, get situated, run vmc apps and services
+      # login, get situated, run cf apps and services
       - op: sequence
         actions:
           - action: login

@@ -98,7 +98,7 @@ rescue => e
 end
 
 if $default_cloud == nil
-  STDERR.puts "failed top determine default cloud"
+  STDERR.puts "failed to determine default cloud"
   exit
 end
 
@@ -136,8 +136,8 @@ $work_queues = []
 def reconfig(do_v2)
   $work_queues = []
   $configs.each_key do |cloud|
-    $redis_t3.sadd("vmc::clouds", cloud)
-    $work_queues << "vmc::#{cloud}::cmd_queue"
+    $redis_t3.sadd("cf::clouds", cloud)
+    $work_queues << "cf::#{cloud}::cmd_queue"
   end
   $log.debug "wq: #{$work_queues.pretty_inspect}"
 
@@ -146,17 +146,17 @@ def reconfig(do_v2)
   $workloads['workloads'] = {} if workloads
 
   # kill the workload hash and then reload from mongo
-  $redis_t3.del("vmc::workloadhash")
+  $redis_t3.del("cf::workloadhash")
   workloads.find.each do |wldoc|
     #$log.debug("rc(0): wldoc['__key__'] => #{wldoc['__key__']}, wldoc => #{wldoc.pretty_inspect}")
     $workloads['workloads'][wldoc['__key__']] = wldoc
     wlkey = wldoc['__key__']
-    $redis_t3.sadd("vmc::workloads", wlkey)
-    $redis_t3.hset("vmc::workloadhash", wlkey, wldoc.to_json)
+    $redis_t3.sadd("cf::workloads", wlkey)
+    $redis_t3.hset("cf::workloadhash", wlkey, wldoc.to_json)
   end
 
-  $redis_t3.set("vmc::naburl", $naburl)
-  $redis_t3.set("vmc::nabvurl", $nabvurl)
+  $redis_t3.set("cf::naburl", $naburl)
+  $redis_t3.set("cf::nabvurl", $nabvurl)
   $log.debug("reconfig: #{do_v2}, instance: #{$vcap_app['instance_index']}")
   if do_v2
     setup_constants($default_cloud)
@@ -170,6 +170,7 @@ def setup_constants(cloud)
   begin
     $log.debug("sv2: login #{target} #{cloud['users'][0]['name']}/#{cloud['users'][0]['password']}")
     cfclient = CFoundry::Client.new(target)
+    cfclient.trace = true
     cfclient.login(cloud['users'][0]['name'], cloud['users'][0]['password'])
   rescue Exception => e
     puts "exception during login #{target} #{cloud['users'][0]['name']}/#{cloud['users'][0]['password']}"
@@ -183,26 +184,30 @@ def setup_constants(cloud)
     v2['space'] = {}
     v2['space']['name'] = cloud['space']
     cfclient.current_organization = cfclient.organization_by_name(v2['org']['name'])
+    p cfclient.organization_by_name(v2['org']['name'])
+    puts "==============> Cloud #{cloud}"
+    puts "==============> V2 #{v2}"
+    puts "==============> current org #{cfclient.current_organization}"
     cfclient.current_space = cfclient.space_by_name(v2['space']['name'])
     v2['org']['id'] = cfclient.current_organization.guid
     v2['space']['id'] = cfclient.current_space.guid
   end
 
   # cache frameworks and runtimes
-  v2['frameworks'] = {}
-  frameworks = cfclient.frameworks
-  frameworks.each do |fw|
-    $log.debug("sec: fw == #{fw.name}")
-    v2['frameworks'][fw.name] = fw.name
-    v2['frameworks'][fw.name] = fw.guid if $default_cloud['mode'] == 'v2'
-  end
-  v2['runtimes'] = {}
-  runtimes = cfclient.runtimes
-  runtimes.each do |rt|
-    $log.debug("sec: rt == #{rt.name}")
-    v2['runtimes'][rt.name] = rt.name
-    v2['runtimes'][rt.name] = rt.guid if $default_cloud['mode'] == 'v2'
-  end
+  #v2['frameworks'] = {}
+  #frameworks = cfclient.frameworks
+  #frameworks.each do |fw|
+  #  $log.debug("sec: fw == #{fw.name}")
+  #  v2['frameworks'][fw.name] = fw.name
+  #  v2['frameworks'][fw.name] = fw.guid if $default_cloud['mode'] == 'v2'
+  #end
+  #v2['runtimes'] = {}
+  #runtimes = cfclient.runtimes
+  #runtimes.each do |rt|
+  #  $log.debug("sec: rt == #{rt.name}")
+  #  v2['runtimes'][rt.name] = rt.name
+  #  v2['runtimes'][rt.name] = rt.guid if $default_cloud['mode'] == 'v2'
+  #end
 
   # cache service plans
   if $default_cloud['mode'] == 'v2'
@@ -218,7 +223,7 @@ def setup_constants(cloud)
     end
   end
   $log.debug("sv2: v2-s #{v2.pretty_inspect}")
-  $redis_t3.set("vmc::#{cloud['shortname']}::v2cache", v2.to_json)
+  $redis_t3.set("cf::#{cloud['shortname']}::v2cache", v2.to_json)
 end
 reconfig($vcap_app['instance_index'] == 0)
 
@@ -241,8 +246,8 @@ $log.debug "Time.now.utc #{Time.now.utc}"
 
 # link to our libraries
 $:.unshift(File.join(File.dirname(__FILE__), 'lib'))
-require 'nabv/vmcworker'
-require 'nabv/vmcworkitem'
+require 'nabv/cf_worker'
+require 'nabv/cf_work_item'
 
 # message threads
 $workers = 2
@@ -257,11 +262,11 @@ $workers.times do |thread_index|
       # in this case, when the hm restarts the worker, we need to clear out the
       # old record since that worker was executed and the new worker is taking its place
       worker_id = "#{$active_worker_id}::#{thread_index}"
-      key = "vmc::#{$default_cloud['shortname']}::active_workers"
+      key = "cf::#{$default_cloud['shortname']}::active_workers"
       x = redis.srem(key, worker_id)
       $log.debug("#{x} = redis.srem(#{key}, #{worker_id}")
 
-      VmcWorker.run($work_queues, $apps, redis, redis_t2, worker_id)
+      CfWorker.run($work_queues, $apps, redis, redis_t2, worker_id)
     rescue Exception => e
       $log.warn "*** FATAL UNHANDLED EXCEPTION ***"
       $log.warn "e: #{e.inspect}"
@@ -275,14 +280,14 @@ end
 # Web pages here...
 
 get '/' do
-  VmcWorker.index
+  CfWorker.index
 end
 
 get '/cleanall' do
   halt 400 if !params[:cloud]
   cmd = {}
   cmd['cloud'] = params[:cloud]
-  workitem = VmcWorkItem.new(cmd, $redis_t3, $apps, "#{$active_worker_id}::000")
+  workitem = CfWorkItem.new(cmd, $redis_t3, $apps, "#{$active_worker_id}::000")
   rv = workitem.enumApps(true)
   rv.to_json
 end
@@ -308,5 +313,5 @@ end
 
 
 get '/reset' do
-  VmcWorker.reset
+  CfWorker.reset
 end

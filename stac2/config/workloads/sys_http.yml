@@ -1,7 +1,7 @@
 # Copyright (c) 2009-2013 VMware, Inc.
 workloads:
   sys_http:
-    display: relatively heacy http load against a newly created app
+    display: relatively heavy http load against a newly created app
     appnames:
       - please-compute
 
@@ -41,7 +41,7 @@ workloads:
             appname: 0
 
   xnf_http_1k:
-    display: heavy http load torgetting static nf, 1k transfers
+    display: heavy http load targetting static nf, 1k transfers
     appnames:
       - nf
 

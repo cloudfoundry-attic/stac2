@@ -8,7 +8,7 @@ helpers do
   # -------------------------- new code for stac2 fe ----------------------
   # -------------------------- core api helpers ---------------------------
   def reset_cloud(cloud)
-    keys = $redis.keys "vmc::#{cloud}::*"
+    keys = $redis.keys "cf::#{cloud}::*"
     $log.debug "keys: #{keys.pretty_inspect}"
     keys.each do |k|
       $redis.del k
@@ -22,7 +22,7 @@ helpers do
   def get_action_stats(cloud, since)
 
     # raw result scheme
-    loadkey = "vmc::#{cloud}::load"
+    loadkey = "cf::#{cloud}::load"
     rv = {
       :timestamp => Time.now.tv_sec,
       :action_counts => {},
@@ -40,27 +40,27 @@ helpers do
     end
 
     scarf_keys = [
-      # vmc
-      { :key => "vmc::#{cloud}::actions::action_set", :column => 'action_count'},
-      { :key => "vmc::#{cloud}::actions::time_50", :column => 'action_count_50'},
-      { :key => "vmc::#{cloud}::actions::time_50_100", :column => 'action_count_50_100'},
-      { :key => "vmc::#{cloud}::actions::time_100_200", :column => 'action_count_100_200'},
-      { :key => "vmc::#{cloud}::actions::time_200_400", :column => 'action_count_200_400'},
-      { :key => "vmc::#{cloud}::actions::time_400_1s", :column => 'action_count_400_1s'},
-      { :key => "vmc::#{cloud}::actions::time_1s_2s", :column => 'action_count_1s_2s'},
-      { :key => "vmc::#{cloud}::actions::time_2s_3s", :column => 'action_count_2s_3s'},
-      { :key => "vmc::#{cloud}::actions::time_3s", :column => 'action_count_3s'},
-      { :key => "vmc::#{cloud}::actions::time_average", :column => 'action_count_avg'},
-      { :key => "vmc::#{cloud}::actions::fail_set", :column => 'action_count_err'},
+      # cf
+      { :key => "cf::#{cloud}::actions::action_set", :column => 'action_count'},
+      { :key => "cf::#{cloud}::actions::time_50", :column => 'action_count_50'},
+      { :key => "cf::#{cloud}::actions::time_50_100", :column => 'action_count_50_100'},
+      { :key => "cf::#{cloud}::actions::time_100_200", :column => 'action_count_100_200'},
+      { :key => "cf::#{cloud}::actions::time_200_400", :column => 'action_count_200_400'},
+      { :key => "cf::#{cloud}::actions::time_400_1s", :column => 'action_count_400_1s'},
+      { :key => "cf::#{cloud}::actions::time_1s_2s", :column => 'action_count_1s_2s'},
+      { :key => "cf::#{cloud}::actions::time_2s_3s", :column => 'action_count_2s_3s'},
+      { :key => "cf::#{cloud}::actions::time_3s", :column => 'action_count_3s'},
+      { :key => "cf::#{cloud}::actions::time_average", :column => 'action_count_avg'},
+      { :key => "cf::#{cloud}::actions::fail_set", :column => 'action_count_err'},
 
       # http counts
-      { :key => "vmc::#{cloud}::http::action_set", :column => 'action_count'},
-      { :key => "vmc::#{cloud}::http::time_50", :column => 'action_count_50'},
-      { :key => "vmc::#{cloud}::http::time_50_100", :column => 'action_count_50_100'},
-      { :key => "vmc::#{cloud}::http::time_100_200", :column => 'action_count_100_200'},
-      { :key => "vmc::#{cloud}::http::time_200_400", :column => 'action_count_200_400'},
-      { :key => "vmc::#{cloud}::http::time_400_1s", :column => 'action_count_400_1s'},
-      { :key => "vmc::#{cloud}::http::time_1s", :column => 'action_count_1s'},
+      { :key => "cf::#{cloud}::http::action_set", :column => 'action_count'},
+      { :key => "cf::#{cloud}::http::time_50", :column => 'action_count_50'},
+      { :key => "cf::#{cloud}::http::time_50_100", :column => 'action_count_50_100'},
+      { :key => "cf::#{cloud}::http::time_100_200", :column => 'action_count_100_200'},
+      { :key => "cf::#{cloud}::http::time_200_400", :column => 'action_count_200_400'},
+      { :key => "cf::#{cloud}::http::time_400_1s", :column => 'action_count_400_1s'},
+      { :key => "cf::#{cloud}::http::time_1s", :column => 'action_count_1s'},
     ]
 
     scarf_keys.each do |item|
@@ -71,7 +71,7 @@ helpers do
     end
 
     # http response status row
-    s = get_zset("vmc::#{cloud}::http::response_status_bucket_set")
+    s = get_zset("cf::#{cloud}::http::response_status_bucket_set")
     if s.length > 0
       as['http-status'] = {
         :k => 'http-status'
@@ -124,9 +124,9 @@ helpers do
     #$log.debug("get_stats: rv[:action_counts] --> #{rv[:action_counts].pretty_inspect}")
 
     # add in random singleton stats
-    rv[:stats]['pending_workitems'] = $redis.llen "vmc::#{cloud}::cmd_queue"
+    rv[:stats]['pending_workitems'] = $redis.llen "cf::#{cloud}::cmd_queue"
 
-    boot_time = $redis.get "vmc::#{cloud}::boot_time"
+    boot_time = $redis.get "cf::#{cloud}::boot_time"
     if boot_time
       rv[:stats]['boot_time'] = boot_time
 
@@ -142,7 +142,7 @@ helpers do
     end
 
     # capture number of active workers
-    rv[:stats]['vmc_active_workers'] = $redis.scard "vmc::#{cloud}::active_workers"
+    rv[:stats]['cf_active_workers'] = $redis.scard "cf::#{cloud}::active_workers"
 
     # capture the current rate
     tvn = Time.now.tv_sec
@@ -150,7 +150,7 @@ helpers do
     one_s_prev_tv = tvn - 1
 
     # grab cc action rate
-    one_s_prev_key = "vmc::#{cloud}::rate_1s::#{one_s_prev_tv}"
+    one_s_prev_key = "cf::#{cloud}::rate_1s::#{one_s_prev_tv}"
     one_s_prev = $redis.get(one_s_prev_key).to_i
     if one_s_prev
       rv[:stats]['action_rate'] = one_s_prev
@@ -159,7 +159,7 @@ helpers do
     end
 
     # grab http request rate
-    one_s_prev_key = "vmc::#{cloud}::http_rate_1s::#{one_s_prev_tv}"
+    one_s_prev_key = "cf::#{cloud}::http_rate_1s::#{one_s_prev_tv}"
     one_s_prev = $redis.get(one_s_prev_key).to_i
     if one_s_prev
       rv[:stats]['http_rate'] = one_s_prev
@@ -332,7 +332,7 @@ helpers do
   # force load clouds and workloads
   def load_clouds_and_workloads
     if $cloudsandworkloads == nil
-      nabvurl = $redis2.get "vmc::nabvurl"
+      nabvurl = $redis2.get "cf::nabvurl"
       if nabvurl == nil || !nabvurl.start_with?('http://nab')
         $log.info("load_clouds_and_workloads: missing nabvurl, recreating using $default_if_null_nabvurl: #{$default_if_null_nabvurl}")
         nabvurl = $default_if_null_nabvurl

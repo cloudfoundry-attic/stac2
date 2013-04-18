@@ -12,7 +12,7 @@ var redis = null;
 // map http urls to handlers
 var routes = {
   "/http" : httpCmd,   // dispatch here for http workload generation
-  "/vmc": vmcCmd,      // dispatch here for vmc workload generation
+  "/cf": cfCmd,      // dispatch here for cf workload generation
   "/stats" : stats,
   "/abort" : abort
 };
@@ -21,7 +21,7 @@ var routes = {
 // map commands to appropriate trimmed queues
 var queues = {
   "http-cmd": {"name": "http::cmd_queue", "trim": 20000},
-  "vmc-cmd":  {"name": "vmc::cmd_queue", "trim": 100}
+  "cf-cmd":  {"name": "cf::cmd_queue", "trim": 100}
 }
 
 // this is the function that bootstraps the http server
@@ -37,14 +37,14 @@ function boot(r, i) {
   // called on each http request
   // this is the dispatcher for the following stac2 generated work requests
   //  - http://nabh.your-domain.com/http -- asynch http calls, optionally status tracked
-  //  - http://nabh.your-domain.com/vmc  -- vmc commands, dispatched into the vmc::{cloud}::cmd_queue
+  //  - http://nabh.your-domain.com/cf  -- cf commands, dispatched into the cf::{cloud}::cmd_queue
   function onRequest(request, response) {
     var u = url.parse(request.url);
     var path = u.pathname;
     //console.log("request received for: " + path);
 
     if (routes[path] && typeof routes[path] == 'function' ) {
-      // call httpCmd or vmcCmd, depending on path
+      // call httpCmd or cfCmd, depending on path
       routes[path](request, response);
     } else {
       response.writeHead(404, {"Content-Type": "text/plain"});
@@ -92,17 +92,17 @@ function httpCmd(request, response) {
   response.end();
 }
 
-// place command on the vmc queue
-function vmcCmd(request, response) {
+// place command on the cf queue
+function cfCmd(request, response) {
   if (request.method == 'GET') {
     try {
-    var cmd = createCmd(request, 'vmc-cmd');
+    var cmd = createCmd(request, 'cf-cmd');
 
     var responseData = {};
     responseData.uuid = startGeneratingLoad(cmd);
     } catch (error) {
       response.writeHead(500, {"Content-Type": "text/plain"});
-      response.write('exception in vmcCmd: ' + util.inspect(error));
+      response.write('exception in cfCmd: ' + util.inspect(error));
       response.end();
       return;
     }
@@ -144,18 +144,18 @@ function startGeneratingLoad(cmd) {
   var workItems = computeWorkItems(cmd);
   var queue = queues[cmd.type].name;
 
-  // the above establishes vmc::cmd_queue as the default
-  // we assume though that ALL VMC commands target a cloud
-  // so we always send to vmc::{cloud}::cmd_queue
+  // the above establishes cf::cmd_queue as the default
+  // we assume though that ALL cf commands target a cloud
+  // so we always send to cf::{cloud}::cmd_queue
   cmax = null;
   active_workers = null;
   wastegate = null;
-  if (cmd.type == 'vmc-cmd') {
-    queue = "vmc::" + cmd.cloud + "::cmd_queue"
+  if (cmd.type == 'cf-cmd') {
+    queue = "cf::" + cmd.cloud + "::cmd_queue"
     if (cmd.cmax) {
-      cmax = "vmc::" + cmd.cloud + "::cmax"
-      active_workers = "vmc::" + cmd.cloud + "::active_workers"
-      wastegate = "vmc::" + cmd.cloud + "::wastegate"
+      cmax = "cf::" + cmd.cloud + "::cmax"
+      active_workers = "cf::" + cmd.cloud + "::active_workers"
+      wastegate = "cf::" + cmd.cloud + "::wastegate"
     }
   } else {
     cmax = null;
@@ -176,7 +176,7 @@ function startGeneratingLoad(cmd) {
     // write the cmax to redis, then look at the
     // cardinality of active_workers. IF active_worker count > cmx+slop
     // then wastegate the work item keeping the active_worker count in check
-    if (cmd.type == 'vmc-cmd' && cmd.cmax > 0) {
+    if (cmd.type == 'cf-cmd' && cmd.cmax > 0) {
       redis.set(cmax, cmd.cmax);
 
       // read cardinality from active_workers, wastegate the item as needed
@@ -290,8 +290,8 @@ function computeWorkItems(cmd) {
 // note, default values will be used IF the query string
 // does not contain a value, or if its value is out of range
 // or mis-configured
-var VMC_nMax = 5000;
-var VMC_cMax = CMAX;
+var cf_nMax = 5000;
+var cf_cMax = CMAX;
 var HTTP_nMax = 25000;
 var HTTP_plMax = 20;
 var HTTP_cMax = CMAX;
@@ -307,8 +307,8 @@ function createCmd(request, cmd_type) {
     if (buildHttpCmd() == null) {
       return null
     }
-  } else if (cmd_type == 'vmc-cmd') {
-    if (buildVmcCmd() == null) {
+  } else if (cmd_type == 'cf-cmd') {
+    if (buildcfCmd() == null) {
       return null
     }
   } else {
@@ -317,8 +317,8 @@ function createCmd(request, cmd_type) {
   //console.log("createCmd: " + util.inspect(cmd))
   return cmd;
 
-  // vmc command sanitizer
-  function buildVmcCmd(){
+  // cf command sanitizer
+  function buildcfCmd(){
     cmd.n = 1;
     cmd.c = 1;
 
@@ -326,28 +326,28 @@ function createCmd(request, cmd_type) {
     if (q.wl) {
       cmd.wl = q.wl;
     } else {
-      console.log("builtVmcCmd: invalid command, missing wl: " + util.inspect(q))
+      console.log("builtcfCmd: invalid command, missing wl: " + util.inspect(q))
       return null;
     }
     if (q.cloud) {
       cmd.cloud = q.cloud
     } else {
-      console.log("builtVmcCmd: invalid command, missing cloud: " + util.inspect(q))
+      console.log("builtcfCmd: invalid command, missing cloud: " + util.inspect(q))
       return null;
     }
 
     if (q.cmax) {
       cmd.cmax = parseInt(q.cmax);
-      if (cmd.cmax > VMC_cMax) cmd.cmax = VMC_cMax
+      if (cmd.cmax > cf_cMax) cmd.cmax = cf_cMax
     }
 
     // compute n from query string, with range and type check
-    if (q.n && (n = parseInt(q.n)) && n <= VMC_nMax) {
+    if (q.n && (n = parseInt(q.n)) && n <= cf_nMax) {
       cmd.n = n;
     }
 
     // compute c from query string, with range and type check
-    if (q.c && (c = parseInt(q.c)) && c <= VMC_cMax) {
+    if (q.c && (c = parseInt(q.c)) && c <= cf_cMax) {
       cmd.c = c;
     }
     return cmd;

@@ -1,7 +1,7 @@
 # Copyright (c) 2009-2013 VMware, Inc.
-require 'vmc'
+require 'cf'
 
-class VmcWorker
+class CfWorker
   class << self
     attr_reader :events
     $bucket_list = []
@@ -27,14 +27,14 @@ class VmcWorker
         queue, msg = @redis.blpop(*[queues, 0].flatten)
         $log.debug "blpop => #{queue}, #{msg.inspect}"
         # partial recover from a user/caldecott initiated flushall
-        naburl = @redis.get("vmc::naburl")
+        naburl = @redis.get("cf::naburl")
         $log.debug("naburl: #{naburl}")
         if !naburl
           $log.warn("resetting base settings due to flushall")
           reconfig
         end
 
-        workitem = VmcWorkItem.new(JSON.parse(msg), @redis2, apps, workerid)
+        workitem = CfWorkItem.new(JSON.parse(msg), @redis2, apps, workerid)
         $log.debug "workitem: #{workitem.inspect}"
         workitem.execute
         workitem.rundown

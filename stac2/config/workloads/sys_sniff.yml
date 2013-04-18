@@ -1,7 +1,7 @@
 # Copyright (c) 2009-2013 VMware, Inc.
 workloads:
   sys_sniff:
-    display: vmc target + login + apps ~ developer ping
+    display: cf target + login + apps ~ developer ping
     load_multiplier: 10
 
     operations:
@@ -13,11 +13,11 @@ workloads:
           - action: apps
 
   sys_info:
-    display: simulate vmc target
+    display: simulate cf target
     load_multiplier: 12
 
     operations:
-      # vmc target * 5
+      # cf target * 5
       - op: sequence
         actions:
           - action: info
